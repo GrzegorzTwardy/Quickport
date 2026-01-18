@@ -1,0 +1,16 @@
+[
+    {
+        "id": "3y12983821",
+        "uname": "newname",
+        "login": "s",
+        "parssword_hash": "s",
+        "salt": "OzRtQ+3L/0",
+        "token": "s",
+        "api_key": "s",
+        "url_instance": "s",
+        "parsers": [
+            "new_parser"
+        ],
+        "desc": "s"
+    }
+]

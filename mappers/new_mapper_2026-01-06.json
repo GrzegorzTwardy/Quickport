@@ -1,0 +1,190 @@
+{
+    "owner_id": "1392184",
+    "sheet_rules": [
+        {
+            "sheet_name": "Active OM SKUs",
+            "pricebook_configs": [
+                {
+                    "name": "pb-1",
+                    "currencies": [
+                        {
+                            "code": "CZK",
+                            "source_column": "Name",
+                            "conversion_factor": 1.0,
+                            "args": {}
+                        },
+                        {
+                            "code": "EUR",
+                            "source_column": "Restricted",
+                            "conversion_factor": 2.0,
+                            "args": {}
+                        },
+                        {
+                            "code": "GBP",
+                            "source_column": "Update Status",
+                            "conversion_factor": 5.0,
+                            "args": {}
+                        },
+                        {
+                            "code": "PLN",
+                            "source_column": "Restricted",
+                            "conversion_factor": 1.0,
+                            "args": {}
+                        }
+                    ]
+                },
+                {
+                    "name": "pb-2",
+                    "currencies": [
+                        {
+                            "code": "GBP",
+                            "source_column": "Effective Date",
+                            "conversion_factor": 1.0,
+                            "args": {}
+                        },
+                        {
+                            "code": "PLN",
+                            "source_column": "Effective Date",
+                            "conversion_factor": 1.0,
+                            "args": {}
+                        }
+                    ]
+                }
+            ],
+            "product2_mappings": [
+                {
+                    "included": false,
+                    "sf_target_field": "id",
+                    "source_column": "Update Status",
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "name",
+                    "source_column": "Restricted",
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "SKU",
+                    "source_column": "Name",
+                    "mapping_type": null,
+                    "allows_nulls": true,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "manu",
+                    "source_column": "Restricted",
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "category",
+                    "source_column": null,
+                    "mapping_type": "FUNCTION",
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "desc",
+                    "source_column": "Name",
+                    "mapping_type": null,
+                    "allows_nulls": true,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "a-really-long-field-name-123-2321-231",
+                    "source_column": null,
+                    "mapping_type": "SPLIT",
+                    "allows_nulls": false,
+                    "args": {}
+                }
+            ]
+        },
+        {
+            "sheet_name": "renewals",
+            "pricebook_configs": [
+                {
+                    "name": "pb-2",
+                    "currencies": [
+                        {
+                            "code": "GBP",
+                            "source_column": "Effective Date",
+                            "conversion_factor": 1.0,
+                            "args": {}
+                        }
+                    ]
+                }
+            ],
+            "product2_mappings": [
+                {
+                    "included": true,
+                    "sf_target_field": "id",
+                    "source_column": "Effective Date",
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "name",
+                    "source_column": null,
+                    "mapping_type": "SPLIT",
+                    "allows_nulls": true,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "SKU",
+                    "source_column": "Update Status",
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "manu",
+                    "source_column": "Effective Date",
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "category",
+                    "source_column": "Name",
+                    "mapping_type": null,
+                    "allows_nulls": true,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "desc",
+                    "source_column": "Update Status",
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "a-really-long-field-name-123-2321-231",
+                    "source_column": null,
+                    "mapping_type": "FUNCTION",
+                    "allows_nulls": false,
+                    "args": {}
+                }
+            ]
+        }
+    ],
+    "id": "f88babed-a448-4d07-9ebf-9a22c34bce26",
+    "name": "new_mapper_2026-01-06"
+}
