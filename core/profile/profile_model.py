@@ -1,43 +1,45 @@
+import json
 from dataclasses import dataclass, field
-
 from utils.security import salt
 from utils.creds_model import Credentials
 
 
 @dataclass
 class Profile:
+    
     uname: str
-    login: str
-    password_hash: str
-    token: str
-    api_key: str
-    url_instance: str
-    parsers: list
-    desc: str
-    salt: str = field(default_factory=lambda: salt(10))
-
+    password: str
+    security_token: str
+    consumer_key: str
+    consumer_secret: str
+    instance_url: str
+    # parsers: list
+    # desc: str
+    # salt: str = field(default_factory=lambda: salt(10))
+     
     @classmethod
-    def from_creds(cls, creds: Credentials):
+    def from_json(cls, file_path):
+        with open(file_path, 'r', encoding='utf-8') as file:
+            pr = json.load(file)
         return cls(
-            uname=creds.uname,
-            login=creds.login,
-            password_hash=creds.password_hash,
-            token=creds.token,
-            api_key=creds.api_key,
-            url_instance=creds.url_instance,
-            parsers=creds.parsers,
-            desc=creds.desc
+            uname=pr['username'],
+            password=pr['password'],
+            security_token=pr['security_token'],
+            consumer_key=pr['consumer_key'],
+            consumer_secret=pr['consumer_secret'],
+            instance_url=pr['instance_url']
         )
+        
 
     def get(self):
         return {
             'uname': self.uname,
             'login': self.login,
-            'parssword_hash': self.password_hash,
+            'parssword': self.password,
             'salt': self.salt,
             'token': self.token,
             'api_key': self.api_key,
-            'url_instance': self.url_instance,
+            'instance_url': self.instance_url,
             'parsers': self.parsers,
             'desc': self.desc
         }

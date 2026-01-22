@@ -4,7 +4,7 @@ from dataclasses import dataclass
 class Credentials:
     uname: str
     login: str
-    password_hash: str
+    password: str
     salt: str
     token: str
     api_key: str

@@ -159,6 +159,9 @@ class MapperEngine:
                     )
                     
         # === MAPPPING PRICEBOOK ENTRIES ===
+        # TODO WAŻNIEJSZE: czy pb_entries ma być utworzone dopiero po przesłaniu prod2
+        # do Salesforce, bo pb_entries wymaga id prod2, które tworzy się na Sf
+        # TODO: sprawdzić, czy oprócz pb_id, prod2_id, price coś ma być z pb_entries_fields
         for config in pb_configs:
             pb_id = config.pricebook_id
             currencies = []
