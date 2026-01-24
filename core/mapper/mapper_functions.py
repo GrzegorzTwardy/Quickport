@@ -2,6 +2,8 @@ import pandas as pd
 from exceptions.mapper_exceptions import UnknownMappingTypeError
 from core.mapper.mapper_model import ProductFieldMapping
 
+mapping_functions_list = ['SET ALL', 'PRICE', 'REPLACE', 'JOIN']
+
 # UTILITY FUNCTIONS
 def cell(column: pd.Series, row: int):
     return column[row]

@@ -49,12 +49,20 @@ class AppSession(QObject):
 
 
     def test_login(self):
+        def fields_to_dict(fields):
+            return {
+                field: {
+                    'required': True,
+                    'readOnly': False
+                }
+                for field in fields
+            }
+        
         self.login(
             user_id='343243242',
             sf_metadata=SfMetadata(
-                # ID nie jest potrzebne w fields
-                product2_fields=['id', 'name', 'SKU', 'manu', 'category', 'desc', 'a-really-long-field-name-123-2321-231'],
-                pb_entries_fields=['Id', 'PricebookId', 'Product2Id', 'UnitPrice', 'IsActive'],
+                product2_fields=fields_to_dict(['name', 'SKU', 'manu', 'category', 'desc', 'a-really-long-field-name-123-2321-231']),
+                pb_entries_fields=fields_to_dict(['PricebookId', 'Product2Id', 'UnitPrice', 'IsActive']),
                 pricebooks={
                     'id0934':'pb-1', 
                     'id3742':'pb-2', 

@@ -1,3 +1,4 @@
+# TODO: change name to SfMetadataMissing
 class SalesforceDataMissingError(Exception):
     
     def __init__(self, data):

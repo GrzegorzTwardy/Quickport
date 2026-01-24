@@ -20,6 +20,8 @@ class MapperEngine:
         session.validate()
         self.session = session
         
+        # TODO: zrobić zestaw danych opisujących 
+        
         self.pricebooks: dict[str, pd.DataFrame] = get_sheets_from_file(pricebook_path)
         with open(mapper_path, 'r') as mapper_file:
             mapper_dict = json.load(mapper_file)
@@ -40,8 +42,8 @@ class MapperEngine:
     def map_and_save(self):
         # Tymczasowo, żeby prod2 działało
         prod2 = self.map_data()[0]
-        prod2_path = Path('./output/new_p2.csv')  
-        prod2.to_csv(prod2_path)
+        prod2_path = Path('./output/ab-renewals.csv')  
+        prod2.to_csv(prod2_path, index=False)
 
 
     def map_data(self) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -191,10 +193,21 @@ class MapperEngine:
     
 
 if __name__ == '__main__':
+    from core.profile.profile_model import Profile
+    from salesforce_api.salesforce_api import SalesforceApi
+    
     pb_path = Path('./data/ab.xlsx')
-    m_path = Path('./mappers/test-3.json')
+    m_path = Path('./mappers/ab-mapper.json')
+    
+    profile = Profile.from_json('./cert/test_creds.json')    
+    sf_api = SalesforceApi(profile)
+    sf_api.connect()
+
     session = AppSession()
-    session.test_login()
+    session.login(
+        user_id='123213', 
+        sf_metadata=sf_api.get_user_sf_metadata()
+    )
     
     engine = MapperEngine(pb_path, m_path, session)
 

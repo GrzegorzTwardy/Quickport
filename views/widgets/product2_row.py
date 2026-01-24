@@ -1,24 +1,28 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QObject
 from PySide6.QtWidgets import (
     QLabel, QGridLayout, QWidget,
     QCheckBox, QComboBox, QSizePolicy
 )
 
 from core.mapper.mapper_model import ProductFieldMapping
-
+from core.mapper.mapper_functions import mapping_functions_list
+from views.widgets.utils.hover_label import HoverLabel
 from exceptions.gui_exceptions import MappingNotSetError
 
-class Product2Row(QWidget):
+# TODO: WYŚWIETLANIE OKNA DLA ARGS DLA FUNCTION COMBO
+class Product2Row(QObject):
 
-    def __init__(self, field_name: str, sheet_columns: list[str], parent=None):
+    def __init__(self, field_name: str, field_metadata: dict, sheet_columns: list[str], parent=None):
         super().__init__(parent)
         
         self.field_name = field_name
+        self.field_metadata = field_metadata
         self.sheet_columns = sheet_columns
-        # TODO: get functions from file
-        self.functions = ['SPLIT', 'PRICE', 'FUNCTION']
         
-        self.setup_ui()
+        # TODO: add more functions
+        self.functions = mapping_functions_list.copy()
+        
+        self.create_widgets(parent)
         self.connect_signals()
 
         
@@ -84,48 +88,45 @@ class Product2Row(QWidget):
         )
 
 
-    def setup_ui(self):
-        self.setSizePolicy(
-            QSizePolicy.Expanding,
-            QSizePolicy.Preferred
-        )
-        
+    def create_widgets(self, parent):
         checkbox_size_policy = QSizePolicy(
             QSizePolicy.Policy.Maximum,
             QSizePolicy.Policy.Fixed
         )
-        
-        layout = QGridLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
 
-        self.include_checkbox = QCheckBox(self)
+        self.include_checkbox = QCheckBox(parent)
         self.include_checkbox.setChecked(True)
         self.include_checkbox.setSizePolicy(checkbox_size_policy)
 
-        max_label_name = 8
-        self.name_label = QLabel(self.format_field_name(self.field_name, max_label_name), self)
-        if len(self.name_label.text()) == max_label_name + 3: # '...'
-            self.name_label.setToolTip(self.field_name)
+        # OLD vanilla label with max text length
+        max_label_name = 16
+        # self.name_label = QLabel(self.format_field_name(self.field_name, max_label_name), self)
+        # if len(self.name_label.text()) == max_label_name + 3: # '...'
+        #     self.name_label.setToolTip(self.field_name)
+        self.name_label = HoverLabel(
+            self.format_field_name(self.field_name, max_label_name),
+            self.field_metadata,
+            parent
+        )
 
-        self.field_combo = QComboBox(self)
+        self.field_combo = QComboBox(parent)
         self.field_combo.addItem('...', None)
         for i, col in enumerate(self.sheet_columns):
             self.field_combo.addItem(f'{i}: {col}', col)
         self.field_combo.setCurrentIndex(0)
         
 
-        self.function_combo = QComboBox(self)
+        self.function_combo = QComboBox(parent)
         # TODO: add functions from available transformations
         self.function_combo.addItem('...', None)
         for f in self.functions:
             self.function_combo.addItem(f, f)
         self.function_combo.setCurrentIndex(0)
 
-        self.allow_nulls_checkbox = QCheckBox(self)
+        self.allow_nulls_checkbox = QCheckBox(parent)
         self.allow_nulls_checkbox.setSizePolicy(checkbox_size_policy)
             
         for combo in (self.field_combo, self.function_combo):
-            # combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Preferred)
             combo.setMinimumWidth(0)
             combo.setMinimumContentsLength(1)
             combo.setSizeAdjustPolicy(
@@ -141,18 +142,6 @@ class Product2Row(QWidget):
             combo.view().setTextElideMode(Qt.ElideNone)
             self.adjust_popup_width(combo)
 
-        layout.addWidget(self.include_checkbox, 0, 0)
-        layout.addWidget(self.name_label, 0, 1)
-        layout.addWidget(self.field_combo, 0, 2)
-        layout.addWidget(self.function_combo, 0, 3)
-        layout.addWidget(self.allow_nulls_checkbox, 0, 4)
-
-        layout.setColumnStretch(0, 1)
-        layout.setColumnStretch(1, 1)
-        layout.setColumnStretch(2, 2)
-        layout.setColumnStretch(3, 2)
-        layout.setColumnStretch(4, 2)
-
     
 if __name__ == "__main__":
     import sys
@@ -161,7 +150,7 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
 
-    window = Product2Row('sf_field', ['field1', 'field2'], None)
+    window = Product2Row('sf_field', { 'required': 'True', 'readOnly':'false' }, ['field1', 'field2'], None)
     window.show()
 
     sys.exit(app.exec())

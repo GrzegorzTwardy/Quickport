@@ -1,0 +1,8 @@
+Name,ProductCode,Description,IsActive,CreatedDate,CreatedById,LastModifiedDate,LastModifiedById,SystemModstamp,Family,CurrencyIsoCode,ExternalDataSourceId,ExternalId,DisplayUrl,QuantityUnitOfMeasure,IsDeleted,IsArchived,LastViewedDate,LastReferencedDate,StockKeepingUnit,Delivery__c,StandardPrice__c,Przedzial__c,Producent__c,Dual_Use__c,Product_Line__c
+AB IPSec Mobile VPN 50 Seat License for Windows,,,,,,,,,,,,,,,,,,,CD-01,Electronic,1000,,,,
+AB IPSec Mobile VPN 10 Seat License for Windows,,,,,,,,,,,,,,,,,,,CD-02,Electronic,1100,,,,
+AB IPSec Mobile VPN 50 Seat License for Mac,,,,,,,,,,,,,,,,,,,CD-03,Electronic,1200,,,,
+AB IPSec Mobile VPN 10 Seat License for Mac,,,,,,,,,,,,,,,,,,,CD-04,Electronic,1300,,,,
+Transceiver 40Gb Short-Range QSFP+ for AB Firewall M,,,,,,,,,,,,,,,,,,,CD-05,Physical,1400,,,,
+AB Firewall M 2 Port 40Gb QSFP+ Fiber Module,,,,,,,,,,,,,,,,,,,CD-06,Physical,1500,,,,
+Cable Kit for Firewall AB222,,,,,,,,,,,,,,,,,,,CD-07,Physical,1600,,,,

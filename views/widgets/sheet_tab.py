@@ -95,18 +95,44 @@ class SheetTab(QWidget):
             item = self.ui.pricebooks_list.item(i)
             item.setHidden(text.lower() not in item.text().lower())
             
-    
     def load_product2_fields(self):
-        # for field_name in self.editor.user_sf_data['product2_fields']:
-        for field_name in self.editor.session.sf_metadata.product2_fields:
-            row_widget = Product2Row(
-                field_name=field_name, 
-                sheet_columns=list(self.df.columns), 
+        grid = self.ui.gridLayout_2
+        grid.setColumnStretch(0, 0)   # checkbox
+        grid.setColumnStretch(1, 2)   # label
+        grid.setColumnStretch(2, 3)   # source
+        grid.setColumnStretch(3, 3)   # function
+        grid.setColumnStretch(4, 1)   # allow empty
+
+        for field_name, field_data in self.editor.session.sf_metadata.product2_fields.items():
+            row = Product2Row(
+                field_name=field_name,
+                field_metadata=field_data,
+                sheet_columns=list(self.df.columns),
                 parent=self.ui.product_fields_scroll_area_contents
             )
-            self.product2_rows[field_name] = row_widget
-            self.ui.gridLayout_2.addWidget(row_widget, self.next_prod2_row_id, 0, 1, 4)
+
+            self.product2_rows[field_name] = row
+            row_index = self.next_prod2_row_id
+
+            grid.addWidget(row.include_checkbox,     row_index, 0)
+            grid.addWidget(row.name_label,           row_index, 1)
+            grid.addWidget(row.field_combo,          row_index, 2)
+            grid.addWidget(row.function_combo,       row_index, 3)
+            grid.addWidget(row.allow_nulls_checkbox, row_index, 4)
+
             self.next_prod2_row_id += 1
+    # OLD 
+    # def load_product2_fields(self):
+    #     for field_name, field_data in self.editor.session.sf_metadata.product2_fields.items():
+    #         row_widget = Product2Row(
+    #             field_name=field_name, 
+    #             field_metadata=field_data,
+    #             sheet_columns=list(self.df.columns), 
+    #             parent=self.ui.product_fields_scroll_area_contents
+    #         )
+    #         self.product2_rows[field_name] = row_widget
+    #         self.ui.gridLayout_2.addWidget(row_widget, self.next_prod2_row_id, 0, 1, 4)
+    #         self.next_prod2_row_id += 1
             
     
     # ==== SETTING UP NEW SHEET TAB =====

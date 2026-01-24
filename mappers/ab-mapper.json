@@ -1,0 +1,160 @@
+{
+    "owner_id": "123213",
+    "sheet_rules": [
+        {
+            "sheet_name": "renewals",
+            "pricebook_configs": [
+                {
+                    "pricebook_id": "01sd200000C3Q77AAF",
+                    "currencies": [
+                        {
+                            "code": "PLN",
+                            "source_column": "MSRP",
+                            "conversion_factor": 1.0
+                        }
+                    ]
+                }
+            ],
+            "product2_mappings": [
+                {
+                    "included": true,
+                    "sf_target_field": "Name",
+                    "source_column": "Name",
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": false,
+                    "sf_target_field": "ProductCode",
+                    "source_column": null,
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": false,
+                    "sf_target_field": "Description",
+                    "source_column": null,
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "IsActive",
+                    "source_column": null,
+                    "mapping_type": "SET ALL",
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "Family",
+                    "source_column": "Product Family",
+                    "mapping_type": null,
+                    "allows_nulls": true,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "CurrencyIsoCode",
+                    "source_column": null,
+                    "mapping_type": "SET ALL",
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": false,
+                    "sf_target_field": "ExternalDataSourceId",
+                    "source_column": null,
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": false,
+                    "sf_target_field": "ExternalId",
+                    "source_column": null,
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": false,
+                    "sf_target_field": "DisplayUrl",
+                    "source_column": null,
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": false,
+                    "sf_target_field": "QuantityUnitOfMeasure",
+                    "source_column": null,
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "StockKeepingUnit",
+                    "source_column": "SKU",
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "Delivery__c",
+                    "source_column": null,
+                    "mapping_type": "REPLACE",
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": true,
+                    "sf_target_field": "StandardPrice__c",
+                    "source_column": "MSRP",
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": false,
+                    "sf_target_field": "Przedzial__c",
+                    "source_column": null,
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": false,
+                    "sf_target_field": "Producent__c",
+                    "source_column": null,
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": false,
+                    "sf_target_field": "Dual_Use__c",
+                    "source_column": null,
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                },
+                {
+                    "included": false,
+                    "sf_target_field": "Product_Line__c",
+                    "source_column": null,
+                    "mapping_type": null,
+                    "allows_nulls": false,
+                    "args": {}
+                }
+            ]
+        }
+    ],
+    "id": "e57a6606-61bb-4bc6-b843-44d2e638f6a8",
+    "name": "ab-mapper"
+}
