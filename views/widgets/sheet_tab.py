@@ -147,12 +147,10 @@ class SheetTab(QWidget):
             
     # ---- CURRENCY TABS MANAGEMENT
     def create_currency_tabs(self):
-        # for pb in self.editor.user_sf_data['pricebooks']:
         for pb_id, pb_name in self.editor.session.sf_metadata.pricebooks.items():
             idx = self.currency_tab_next_id
             self.currency_tab_next_id += 1
-            
-            # tab = CurrencyTab(idx, self.editor.user_sf_data["available_currencies"], list(self.df.columns))
+    
             tab = CurrencyTab(idx, self.editor.session.sf_metadata.available_currencies, list(self.df.columns))
             
             self.all_currency_tabs[f'{pb_id}'] = tab

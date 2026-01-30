@@ -65,7 +65,7 @@ class MapperEngine:
             pb_name = sheet_rule.sheet_name
             
             if pb_name not in self.pricebooks:
-                raise SheetNotFoundError(pb_name)
+                raise SheetNotFoundError(f'Sheet "{pb_name}" has not been found')
             sheet = self.pricebooks[pb_name]
             
             prod2_sheet_df, entries_sheet_df = self.map_sheet(
@@ -114,7 +114,9 @@ class MapperEngine:
             
             # validating mapper data with sf_metadata
             if sf_field not in self.session.sf_metadata.product2_fields:
-                raise TargetSfFieldNotFoundError(sf_field)
+                raise TargetSfFieldNotFoundError(
+                    f'Mapper file defines Salesforce object\'s field "{sf_field}" that doesn\'t exist in Salesforce.'
+                )
             
             if not mapping.included:
                 prod2_result[sf_field] = None
@@ -124,9 +126,8 @@ class MapperEngine:
             if mapping.source_column:
                 if mapping.source_column not in sheet_df.columns:
                     raise SourceColumnNotFoundError(
-                        sheet_name,
-                        mapping.source_column,
-                        sf_field
+                        f"""Column "{mapping.source_column}" not found in sheet "{sheet_name}".
+                        (mapping to SF field "{sf_field}")"""
                     )
                 
                 values, invalid_mask = raw_column(sheet_df[mapping.source_column])

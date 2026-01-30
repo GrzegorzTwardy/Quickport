@@ -1,19 +1,24 @@
 from PySide6.QtCore import Qt, QObject
 from PySide6.QtWidgets import (
-    QLabel, QGridLayout, QWidget,
+    QLabel, QGridLayout,
     QCheckBox, QComboBox, QSizePolicy
 )
 
 from core.mapper.mapper_model import ProductFieldMapping
 from core.mapper.mapper_functions import mapping_functions_list
 from views.widgets.utils.hover_label import HoverLabel
+from views.widgets.dialog_boxes.arg_dialog import ArgDialog
+from views.widgets.utils.no_scroll_combo_box import NoScrollComboBox
 from exceptions.gui_exceptions import MappingNotSetError
 
-# TODO: WYŚWIETLANIE OKNA DLA ARGS DLA FUNCTION COMBO
+
 class Product2Row(QObject):
 
     def __init__(self, field_name: str, field_metadata: dict, sheet_columns: list[str], parent=None):
         super().__init__(parent)
+        
+        self.mapping_args = {}
+        self.last_saved_mapping: str | None = None 
         
         self.field_name = field_name
         self.field_metadata = field_metadata
@@ -29,6 +34,7 @@ class Product2Row(QObject):
     def connect_signals(self):
         self.field_combo.currentIndexChanged.connect(self.update_combos)
         self.function_combo.currentIndexChanged.connect(self.update_combos)
+        self.function_combo.activated.connect(self.on_function_selected)
         self.include_checkbox.checkStateChanged.connect(self.change_row_state)
            
            
@@ -83,10 +89,44 @@ class Product2Row(QObject):
             included=self.include_checkbox.isChecked(),
             sf_target_field=self.field_name,
             source_column=source_column,
-            mapping_type=mapping_type, # TODO: to bedzie to zmiany po implementowaniu funkcji tranformacji
-            allows_nulls=self.allow_nulls_checkbox.isChecked()
+            mapping_type=mapping_type,
+            allows_nulls=self.allow_nulls_checkbox.isChecked(),
+            args=self.mapping_args
         )
 
+
+    # === setting up arg window ===        
+    def open_arg_window(self, mapping_name):
+        
+        def _save_args(args):
+            self.mapping_args = args
+            self.last_saved_mapping = mapping_name
+            
+        def _on_canceled():
+            index = self.function_combo.findData(None)
+            if index != -1:
+                self.function_combo.setCurrentIndex(index)
+        
+        # check if the same mapping is used again, if so then load saved arg config
+        if mapping_name == self.last_saved_mapping:      
+            self._arg_window = ArgDialog(mapping_name, self.sheet_columns, self.mapping_args)
+        else:
+            self._arg_window = ArgDialog(mapping_name, self.sheet_columns, None)
+            
+        self._arg_window.args_saved.connect(_save_args)
+        self._arg_window.canceled.connect(_on_canceled)
+        self._arg_window.show()
+        self._arg_window.raise_()
+        self._arg_window.activateWindow()
+   
+        
+    def on_function_selected(self, index: int):
+        mapping_name = self.function_combo.itemData(index)
+        if mapping_name is None:
+            return
+        self.open_arg_window(mapping_name)
+    # =============================
+    
 
     def create_widgets(self, parent):
         checkbox_size_policy = QSizePolicy(
@@ -116,8 +156,7 @@ class Product2Row(QObject):
         self.field_combo.setCurrentIndex(0)
         
 
-        self.function_combo = QComboBox(parent)
-        # TODO: add functions from available transformations
+        self.function_combo = NoScrollComboBox(parent)
         self.function_combo.addItem('...', None)
         for f in self.functions:
             self.function_combo.addItem(f, f)
@@ -145,12 +184,22 @@ class Product2Row(QObject):
     
 if __name__ == "__main__":
     import sys
-    from PySide6.QtWidgets import QApplication
-    from threading import Timer
+    from PySide6.QtWidgets import QApplication, QWidget, QGridLayout
 
     app = QApplication(sys.argv)
-
-    window = Product2Row('sf_field', { 'required': 'True', 'readOnly':'false' }, ['field1', 'field2'], None)
+    
+    window = QWidget()
+    layout = QGridLayout()
+    window.setLayout(layout)
+    
+    row = Product2Row('sf_field', { 'required': 'True', 'readOnly':'false' }, ['field1', 'field2'], None)
+    
+    layout.addWidget(row.include_checkbox, 0, 0) 
+    layout.addWidget(row.name_label, 0, 1) 
+    layout.addWidget(row.field_combo, 0, 2) 
+    layout.addWidget(row.function_combo, 0, 3) 
+    layout.addWidget(row.allow_nulls_checkbox, 0, 4)
+    
     window.show()
 
     sys.exit(app.exec())

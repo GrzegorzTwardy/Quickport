@@ -68,7 +68,7 @@ def apply_mapping_function(df, mapping: ProductFieldMapping) -> tuple[pd.Series,
             src_column = args['source_column']
             cf = args['conversion_factor']
             return price(df[src_column], cf)
-        case 'REPLACE VALUES':
+        case 'REPLACE': # ZMIENIONO Z REPLACE VALUES
             src_column = args['source_column']
             value_mapping = args['value_mapping']
             return replace_values(df[src_column], value_mapping)

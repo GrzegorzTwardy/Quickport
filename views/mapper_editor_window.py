@@ -83,7 +83,7 @@ class MapperEditorWindow(QWidget):
         
         self.all_sheets = get_sheets_from_file(self.path_to_pricebook)
         self.sheets['renewals'] = self.all_sheets['renewals']
-        self.sheets['Active OM SKUs'] = self.all_sheets['Active OM SKUs']
+        # self.sheets['Active OM SKUs'] = self.all_sheets['Active OM SKUs']
         self.add_sheet_tabs()
         
         
@@ -147,7 +147,7 @@ class MapperEditorWindow(QWidget):
         # TODO: sf_api.connect_to_salesforce()
         
         # ==== TESTING =====
-        # self.auto_select_xlsx_TEST()
+        self.auto_select_xlsx_TEST()
         # ==================
         
     

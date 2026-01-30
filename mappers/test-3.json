@@ -38,7 +38,10 @@
                     "mapping_type": "JOIN",
                     "allows_nulls": false,
                     "args": {
-                        "source_columns": ["SKU", "Method of Delivery"],
+                        "source_columns": [
+                            "SKU",
+                            "Method of Delivery"
+                        ],
                         "separator": "-",
                         "null_default": "null"
                     }
@@ -47,7 +50,7 @@
                     "included": true,
                     "sf_target_field": "name",
                     "source_column": null,
-                    "mapping_type": "REPLACE VALUES",
+                    "mapping_type": "REPLACE",
                     "allows_nulls": false,
                     "args": {
                         "source_column": "Method of Delivery",
@@ -100,7 +103,7 @@
                     "allows_nulls": false,
                     "args": {
                         "source_column": "MSRP",
-                        "conversion_factor": 1.00  
+                        "conversion_factor": 1.00
                     }
                 }
             ]
