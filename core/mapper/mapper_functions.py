@@ -44,11 +44,11 @@ def replace_values(column: pd.Series, mapping: dict[str, str]):
 
 
 # joins n columns with a separator
-def join(columns: list[pd.Series], separator: str, null_default=None):
+def join(columns: list[pd.Series], separator: str, null_display=None):
     values = columns[0].astype('string')
 
     for col in columns[1:]:
-        values = values.str.cat(col.astype('string'), sep=separator, na_rep=null_default)
+        values = values.str.cat(col.astype('string'), sep=separator, na_rep=null_display)
 
     invalid_mask = pd.Series(False, index=values.index)
     return values, invalid_mask
@@ -76,8 +76,8 @@ def apply_mapping_function(df, mapping: ProductFieldMapping) -> tuple[pd.Series,
             column_names = args['source_columns']
             source_columns = [df[col] for col in column_names if col in df.columns]
             separator = args['separator']
-            null_default = args['null_default']
-            return join(source_columns, separator, null_default)
+            null_display = args['null_display']
+            return join(source_columns, separator, null_display)
         case _:
             raise UnknownMappingTypeError(mapping_type)
      
