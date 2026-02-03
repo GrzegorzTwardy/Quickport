@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt, Signal, QObject, QRegularExpression
-from PySide6.QtGui import QRegularExpressionValidator
+from PySide6.QtGui import QRegularExpressionValidator, QCloseEvent
 from PySide6.QtWidgets import (
     QWidget, QMessageBox, QApplication, QFormLayout,
     QLabel, QLineEdit, QGridLayout, QSizePolicy, 
@@ -16,6 +16,7 @@ class ArgDialog(QDialog):
         super().__init__(parent)
         self.setModal(True)
         self.args_to_load = args_to_load
+        self.saved = False # for "changes will not be saved" pop up 
         
         # DTO
         self.args = {}
@@ -36,29 +37,36 @@ class ArgDialog(QDialog):
         self.layout.addWidget(self.back_button, 1, 0)
         self.layout.addWidget(self.save_button, 1, 1)
         
-        
-    def connect_signals(self):
-        self.save_button.clicked.connect(self.get_args_dict)
-        self.back_button.clicked.connect(self.closing_confirmation)
     
-    
-    def closing_confirmation(self):
+    def closeEvent(self, event: QCloseEvent):
+        if self.saved:
+            event.accept()
+            return
+
         result = QMessageBox.question(
-            None,
+            self,
             'Cancel Configuration',
             'Are you sure you want to exit without saving changes?',
             QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
             QMessageBox.StandardButton.No
         )
-        
+
         if result == QMessageBox.Yes:
             self.canceled.emit()
-            self.close()
+            event.accept()
+        else:
+            event.ignore()
+
+    
+    def connect_signals(self):
+        self.save_button.clicked.connect(self.get_args_dict)
+        self.back_button.clicked.connect(self.close)
             
             
     def get_args_dict(self) -> dict:
         self.args = self.args_widget.get_args_from_ui()
         self.args_saved.emit(self.args)
+        self.saved = True
         self.close()
     
     
@@ -142,7 +150,9 @@ class SetAllArgs(QWidget):
         
         if args:
             self.fill_ui(args)
-
+            
+        self.text_le.setFocus()
+        
     
     def fill_ui(self, args: dict):
         self.text_le.setText(args.get('text', ''))

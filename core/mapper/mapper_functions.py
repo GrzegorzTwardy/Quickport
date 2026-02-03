@@ -30,9 +30,9 @@ def price(column: pd.Series, conversion_factor: float):
 
 
 # set all column rows with provided text 
-def set_all(column: pd.Series, text: str):
-    values = pd.Series(text, index=column.index)
-    invalid_mask = pd.Series(False, index=column.index) # invalid mapping not possible
+def set_all(target_index: pd.Index, text: str):
+    values = pd.Series(text, index=target_index)
+    invalid_mask = pd.Series(False, index=target_index)
     return values, invalid_mask
 
 
@@ -62,8 +62,9 @@ def apply_mapping_function(df, mapping: ProductFieldMapping) -> tuple[pd.Series,
     
     match mapping_type:
         case 'SET ALL':
-            src_column = args['source_column']
-            return set_all(df[src_column], args['text'])
+            # src_column = args['source_column']
+            # return set_all(df[src_column], args['text'])
+            return set_all(df.index, args['text'])
         case 'PRICE':
             src_column = args['source_column']
             cf = args['conversion_factor']
@@ -76,7 +77,7 @@ def apply_mapping_function(df, mapping: ProductFieldMapping) -> tuple[pd.Series,
             column_names = args['source_columns']
             source_columns = [df[col] for col in column_names if col in df.columns]
             separator = args['separator']
-            null_display = args['null_display']
+            null_display = args.get('null_display', None)
             return join(source_columns, separator, null_display)
         case _:
             raise UnknownMappingTypeError(mapping_type)

@@ -1,3 +1,15 @@
+class SalesforceApiError(Exception):
+    pass
+
+
+class SalesforceJobFailedError(Exception):
+    pass
+
+
+class MissingRequiredColumnError(Exception):
+    pass
+
+
 class InvalidCsvColumnNamesError(Exception):
     
     def __init__(self, names, obj: str):

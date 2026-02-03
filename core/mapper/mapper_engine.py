@@ -1,3 +1,4 @@
+import time
 import json
 import pandas as pd
 from pathlib import Path
@@ -11,16 +12,15 @@ from dtos.session import AppSession
 from exceptions.mapper_exceptions import *
 from exceptions.global_exceptions import *
 
-# transformacja danych na dane zgode z obiektami Product2 i PricebookEntries w Salesforce
-# TODO: mapowanie na obiekt pb-entries
+# transformacja danych na dane zgodne z obiektami Product2 i PricebookEntry w Salesforce
+# WAŻNE: zakładamy, że pole ProductCode jest wymaganym i unikalnym polem obiektu w Salesforce
+# i na jego podstawie działają poniższe funkcje - brak tego pola skutuje błędem
 
 class MapperEngine:
 
     def __init__(self, pricebook_path: Path | str, mapper_path: Path | str, session: AppSession):
         session.validate()
         self.session = session
-        
-        # TODO: zrobić zestaw danych opisujących 
         
         self.pricebooks: dict[str, pd.DataFrame] = get_sheets_from_file(pricebook_path)
         with open(mapper_path, 'r') as mapper_file:
@@ -29,30 +29,24 @@ class MapperEngine:
         
         self.mapped_prod2 = pd.DataFrame()
         self.mapped_entries = pd.DataFrame()
-        # invalid data
-        self.invalid_data = {
-            'prod2-rows': [],
-            'entries-rows': []
-        }
 
-        # constants
-        self.product2_fields_count = len(self.mapper.sheet_rules[0].product2_mappings)
+        self.execution_errors = [] # Format: [{'Source': str, 'Message': str, 'Details': str}]
+        
+        # for map_and_save()
+        self.pricebook_name = Path(pricebook_path).stem
+        self.mapper_name = Path(mapper_path).stem
 
 
-    def map_and_save(self):
-        # Tymczasowo, żeby prod2 działało
-        prod2 = self.map_data()[0]
-        prod2_path = Path('./output/ab-renewals.csv')  
-        prod2.to_csv(prod2_path, index=False)
-
-
+    # .csv ==> Product2 df and PricebookEntry df
     def map_data(self) -> tuple[pd.DataFrame, pd.DataFrame]:
+        self.execution_errors = []
+        
         all_prod2_headers = set()
         all_pb_entries_headers = self.session.sf_metadata.pb_entries_fields
 
         for sheet_rule in self.mapper.sheet_rules:
             for mapping in sheet_rule.product2_mappings:
-                all_prod2_headers.add(mapping.sf_target_field)            
+                all_prod2_headers.add(mapping.sf_target_field)
         
         # Product2 object table
         prod2_df = pd.DataFrame(columns=list(all_prod2_headers))
@@ -82,7 +76,8 @@ class MapperEngine:
         if not prod2_frames:
             raise MappingError('No product mappings defined')
         
-        # TODO: dac ten sam error ale dla entries
+        if not entries_df_frames:
+            raise MappingError('There was no currency and price configuration for any pricebook')
         
         
         prod2_df = pd.concat(prod2_frames) # ready prod2 data
@@ -105,7 +100,6 @@ class MapperEngine:
             return values, invalid_mask
                 
         prod2_result = pd.DataFrame(index=sheet_df.index)
-        entries_result = pd.DataFrame()
         
         # === MAPPING PROD2 FIELDS ===
         for mapping in prod2_mappings:
@@ -160,17 +154,52 @@ class MapperEngine:
                         sf_field,
                         reason='Null value not allowed'
                     )
-                    
-        # === MAPPPING PRICEBOOK ENTRIES ===
-        # TODO WAŻNIEJSZE: czy pb_entries ma być utworzone dopiero po przesłaniu prod2
-        # do Salesforce, bo pb_entries wymaga id prod2, które tworzy się na Sf
-        # TODO: sprawdzić, czy oprócz pb_id, prod2_id, price coś ma być z pb_entries_fields
-        for config in pb_configs:
-            pb_id = config.pricebook_id
-            currencies = []
-            for currency_mapping in config.currencies:  
-                    pass
-            
+        
+        # check if ProductCode (key field for mapping PricebookEntry) is missing
+        if 'ProductCode' not in prod2_result.columns:
+            raise MappingError(f'ProductCode is missing in sheet {sheet_name}')
+        if prod2_result['ProductCode'].isna().all():
+            raise MappingError(f'ProductCode is required in sheet {sheet_name}')
+        
+        
+        # === MAPPPING PRICEBOOKENTRY ===
+        entries_frames = []
+        sku_series = prod2_result['ProductCode']
+
+        for pb_config in pb_configs:
+            for currency in pb_config.currencies:
+                source_col = currency.source_column
+                
+                if source_col not in sheet_df.columns:
+                    raise SourceColumnNotFoundError(
+                        f"""Column "{source_col}" not found in sheet "{sheet_name}".
+                            (while configuring currencies in pricebooks)"""
+                    )
+
+                temp_df = pd.DataFrame({
+                    'ProductCode': sku_series,
+                    'raw_price': sheet_df[source_col]
+                })
+
+                # removing missing skus and prices
+                temp_df = temp_df.dropna(subset=['ProductCode', 'raw_price'])
+                
+                if temp_df.empty:
+                    continue
+
+                temp_df['Pricebook2Id'] = pb_config.pricebook_id
+                temp_df['CurrencyIsoCode'] = currency.code
+                temp_df['UnitPrice'] = temp_df['raw_price'] * currency.conversion_factor
+                temp_df['IsActive'] = True
+
+                final_cols = ['ProductCode', 'Pricebook2Id', 'CurrencyIsoCode', 'UnitPrice', 'IsActive']
+                entries_frames.append(temp_df[final_cols])
+
+        if entries_frames:
+            entries_result = pd.concat(entries_frames, ignore_index=True)
+        else:
+            entries_result = pd.DataFrame(columns=['ProductCode', 'Pricebook2Id', 'CurrencyIsoCode', 'UnitPrice', 'IsActive'])
+
         return prod2_result, entries_result
 
 
@@ -179,17 +208,17 @@ class MapperEngine:
         sheet_df: pd.DataFrame,
         invalid_mask: pd.Series,
         sheet_name: str,
-        sf_field: str,
-        reason: str
+        message: str
     ):
         invalid_rows = sheet_df.loc[invalid_mask]
         for idx, row in invalid_rows.iterrows():
-            self.invalid_data['prod2-rows'].append({
-                'sheet': sheet_name,
-                'field': sf_field,
-                'reason': reason,
-                'msg': f'Invalid data in sheet "{sheet_name}", row "{idx}". Reason: "{reason}"',
-                'row': row
+            row_dict = row.to_dict()
+            row_clean = {k: v for k, v in row_dict.items() if pd.notna(v)}
+            
+            self.execution_errors.append({
+                'Source': f'Mapper: {sheet_name}',
+                'Message': message,
+                'Details': f'Row {idx}: {str(row_clean)}'
             })
     
 
@@ -211,8 +240,4 @@ if __name__ == '__main__':
     )
     
     engine = MapperEngine(pb_path, m_path, session)
-
-    prod2 = engine.map_and_save()
-    for pdr in engine.invalid_data['prod2-rows']:
-        print(pdr['msg'])
-    # print(len(engine.invalid_data['prod2-rows']))
+    engine.map_and_save()

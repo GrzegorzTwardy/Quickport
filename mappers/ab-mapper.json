@@ -8,9 +8,14 @@
                     "pricebook_id": "01sd200000C3Q77AAF",
                     "currencies": [
                         {
-                            "code": "PLN",
+                            "code": "EUR",
                             "source_column": "MSRP",
                             "conversion_factor": 1.0
+                        },
+                        {
+                            "code": "PLN",
+                            "source_column": "MSRP",
+                            "conversion_factor": 4.0
                         }
                     ]
                 }
@@ -25,9 +30,9 @@
                     "args": {}
                 },
                 {
-                    "included": false,
+                    "included": true,
                     "sf_target_field": "ProductCode",
-                    "source_column": null,
+                    "source_column": "SKU",
                     "mapping_type": null,
                     "allows_nulls": false,
                     "args": {}
@@ -46,7 +51,9 @@
                     "source_column": null,
                     "mapping_type": "SET ALL",
                     "allows_nulls": false,
-                    "args": {}
+                    "args": {
+                        "text": "True"
+                    }
                 },
                 {
                     "included": true,
@@ -62,7 +69,9 @@
                     "source_column": null,
                     "mapping_type": "SET ALL",
                     "allows_nulls": false,
-                    "args": {}
+                    "args": {
+                        "text": "EUR"
+                    }
                 },
                 {
                     "included": false,
@@ -109,16 +118,25 @@
                     "sf_target_field": "Delivery__c",
                     "source_column": null,
                     "mapping_type": "REPLACE",
-                    "allows_nulls": false,
-                    "args": {}
+                    "allows_nulls": true,
+                    "args": {
+                        "source_column": "Method of Delivery",
+                        "value_mapping": {
+                            "Electronic": "Electronic Download",
+                            "Physical": "Hardware"
+                        }
+                    }
                 },
                 {
                     "included": true,
                     "sf_target_field": "StandardPrice__c",
-                    "source_column": "MSRP",
-                    "mapping_type": null,
+                    "source_column": null,
+                    "mapping_type": "PRICE",
                     "allows_nulls": false,
-                    "args": {}
+                    "args": {
+                        "conversion_factor": 4.0,
+                        "source_column": "MSRP"
+                    }
                 },
                 {
                     "included": false,
@@ -155,6 +173,6 @@
             ]
         }
     ],
-    "id": "e57a6606-61bb-4bc6-b843-44d2e638f6a8",
+    "id": "8264ad64-19fe-4aa7-bc86-a5409ee6d296",
     "name": "ab-mapper"
 }
