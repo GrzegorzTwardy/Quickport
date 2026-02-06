@@ -14,7 +14,14 @@ from exceptions.gui_exceptions import MappingNotSetError
 
 class Product2Row(QObject):
 
-    def __init__(self, field_name: str, field_metadata: dict, sheet_columns: list[str], parent=None):
+    def __init__(
+        self, 
+        field_name: str, 
+        field_metadata: dict, 
+        sheet_columns: list[str], 
+        field_mapping: ProductFieldMapping | None,
+        parent=None
+    ):
         super().__init__(parent)
         
         self.mapping_args = {}
@@ -23,12 +30,16 @@ class Product2Row(QObject):
         self.field_name = field_name
         self.field_metadata = field_metadata
         self.sheet_columns = sheet_columns
+        self.field_mapping = field_mapping
         
-        # TODO: add more functions
         self.functions = mapping_functions_list.copy()
         
         self.create_widgets(parent)
         self.connect_signals()
+        
+        if self.field_mapping is not None:
+            self.load_mapping()
+            # self.update_combos()
 
         
     def connect_signals(self):
@@ -37,7 +48,29 @@ class Product2Row(QObject):
         self.function_combo.activated.connect(self.on_function_selected)
         self.include_checkbox.checkStateChanged.connect(self.change_row_state)
            
-           
+    
+    def load_mapping(self):
+        if not self.field_mapping.included:
+            self.include_checkbox.setChecked(False)
+            
+        if self.field_mapping.source_column is not None:
+            source_column = self.field_mapping.source_column
+            index = self.field_combo.findData(source_column)
+            if index != -1: 
+                self.field_combo.setCurrentIndex(index)
+        elif self.field_mapping.mapping_type is not None:
+            mapping_type = self.field_mapping.mapping_type
+            index = self.function_combo.findData(mapping_type)
+            if index != -1: 
+                self.function_combo.setCurrentIndex(index)
+                self.mapping_args = self.field_mapping.args if self.field_mapping.args else {}
+                self.last_saved_mapping = mapping_type
+            
+        if self.field_mapping.allows_nulls:
+            self.allow_nulls_checkbox.setChecked(True)
+        self.update_combos()
+    
+       
     def adjust_popup_width(self, combo):
         fm = combo.fontMetrics()
         max_width = max(
@@ -49,6 +82,19 @@ class Product2Row(QObject):
 
     def update_combos(self):
         event_combo = self.sender()
+        
+        if event_combo is None: # manual invoke (for editing mapper)
+            if self.field_combo.currentData() is not None:
+                self.function_combo.setEnabled(False)
+                self.field_combo.setEnabled(True)
+            elif self.function_combo.currentData() is not None:
+                self.field_combo.setEnabled(False)
+                self.function_combo.setEnabled(True)
+            else:
+                self.field_combo.setEnabled(True)
+                self.function_combo.setEnabled(True)
+            return
+        
         other_combo = (
             self.function_combo
             if event_combo == self.field_combo
@@ -103,9 +149,10 @@ class Product2Row(QObject):
             self.last_saved_mapping = mapping_name
             
         def _on_canceled():
-            index = self.function_combo.findData(None)
-            if index != -1:
-                self.function_combo.setCurrentIndex(index)
+            if mapping_name != self.last_saved_mapping:
+                index = self.function_combo.findData(None)
+                if index != -1:
+                    self.function_combo.setCurrentIndex(index)
         
         # check if the same mapping is used again, if so then load saved arg config
         if mapping_name == self.last_saved_mapping:      
@@ -138,24 +185,45 @@ class Product2Row(QObject):
         self.include_checkbox.setChecked(True)
         self.include_checkbox.setSizePolicy(checkbox_size_policy)
 
-        # OLD vanilla label with max text length
         max_label_name = 16
-        # self.name_label = QLabel(self.format_field_name(self.field_name, max_label_name), self)
-        # if len(self.name_label.text()) == max_label_name + 3: # '...'
-        #     self.name_label.setToolTip(self.field_name)
-        self.name_label = HoverLabel(
-            self.format_field_name(self.field_name, max_label_name),
-            self.field_metadata,
-            parent
-        )
+        self.name_label = None
+        
+        if self.field_metadata is None:
+            self.name_label = HoverLabel(
+                self.format_field_name(self.field_name, max_label_name),
+                { 'Error': 'Field missing in Salesforce.' },
+                parent
+            )
+            self.name_label.setStyleSheet('color: red;') # red if field is missing from Salesforce
+        else:
+            self.name_label = HoverLabel(
+                self.format_field_name(self.field_name, max_label_name),
+                self.field_metadata,
+                parent
+            )
 
         self.field_combo = QComboBox(parent)
         self.field_combo.addItem('...', None)
+        
+        # if self.df_column_amount is not None: 
+        #     snapshot_cols_count = len(self.sheet_columns) - self.df_column_amount
+            
+        #     if snapshot_cols_count < 0:
+        #         raise ValueError('An error occured while calculating available columns.')
+                
+        #     for i, col in enumerate(self.sheet_columns):
+        #         if i < snapshot_cols_count:
+        #             self.field_combo.addItem(f'{i} (Saved in Mapper): {col}', col)
+        #         else:
+        #             self.field_combo.addItem(f'{i}: {col}', col)
+        # else:
+        #     for i, col in enumerate(self.sheet_columns):
+        #         self.field_combo.addItem(f'{i}: {col}', col)
         for i, col in enumerate(self.sheet_columns):
             self.field_combo.addItem(f'{i}: {col}', col)
+            
         self.field_combo.setCurrentIndex(0)
         
-
         self.function_combo = NoScrollComboBox(parent)
         self.function_combo.addItem('...', None)
         for f in self.functions:

@@ -11,7 +11,7 @@
                 "Category",
                 "UPC",
                 "SKU",
-                "MSRP",
+                "Price",
                 "Method of Delivery",
                 "Dimensions of \nunit in box\n(inches)",
                 "Weight of \nunit in box (LBS)",
@@ -24,12 +24,12 @@
                     "currencies": [
                         {
                             "code": "EUR",
-                            "source_column": "MSRP",
+                            "source_column": "Price",
                             "conversion_factor": 1.0
                         },
                         {
                             "code": "PLN",
-                            "source_column": "MSRP",
+                            "source_column": "Price",
                             "conversion_factor": 4.0
                         }
                     ]
@@ -150,7 +150,7 @@
                     "allows_nulls": false,
                     "args": {
                         "conversion_factor": 4.0,
-                        "source_column": "MSRP"
+                        "source_column": "Price"
                     }
                 },
                 {

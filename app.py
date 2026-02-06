@@ -18,7 +18,8 @@ session.login(
 
 app = QApplication(sys.argv)
 
-window = MapperEditorWindow(session, None)
+# window = MapperEditorWindow(session, None)
+window = MapperEditorWindow(session, './mappers/invalid-ab-mapper.json')
 window.show()
 
 sys.exit(app.exec())

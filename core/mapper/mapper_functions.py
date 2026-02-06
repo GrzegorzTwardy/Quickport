@@ -62,14 +62,12 @@ def apply_mapping_function(df, mapping: ProductFieldMapping) -> tuple[pd.Series,
     
     match mapping_type:
         case 'SET ALL':
-            # src_column = args['source_column']
-            # return set_all(df[src_column], args['text'])
             return set_all(df.index, args['text'])
         case 'PRICE':
             src_column = args['source_column']
             cf = args['conversion_factor']
             return price(df[src_column], cf)
-        case 'REPLACE': # ZMIENIONO Z REPLACE VALUES
+        case 'REPLACE':
             src_column = args['source_column']
             value_mapping = args['value_mapping']
             return replace_values(df[src_column], value_mapping)

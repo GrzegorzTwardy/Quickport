@@ -9,17 +9,50 @@ from core.mapper.mapper_model import PricebookConfig, CurrencyMapping
 
 class CurrencyTab(QWidget):
     
-    def __init__(self, index: int, available_currencies: list[str], sheet_columns: list[str]):
+    def __init__(
+        self, 
+        tab_id: int, 
+        available_currencies: list[str], 
+        columns: list[str], 
+        pricebook_config: PricebookConfig | None
+    ):
         super().__init__()
         self._available_currencies: set[str] = set(available_currencies)
-        self.sheet_columns = sheet_columns
+        self.columns = columns
+        self.pricebook_config = pricebook_config
         self.next_row_id = 2 # 0: headers, 1: split line
         
         self.currency_rows: dict[str, CurrencyRow] = {}
         
-        self.setup_ui(index)
+        self.setup_ui(tab_id)
         
+        if self.pricebook_config: # if editing mapper
+            self.load_config()
+        
+    
+    def load_config(self):
+        for curr_mapping in self.pricebook_config.currencies:
+            row_index = self.next_row_id
+            self.next_row_id += 1
+            
+            row_widget = CurrencyRow(curr_mapping.code, self.columns, curr_mapping, self.frame, self.frame_layout)
+            self.frame_layout.addWidget(row_widget, row_index, 0, 1, 4)
+            
+            # if i == 0:
+            #     row_widget.c_factor_ledit.setFocus()
 
+            # removing new currency from available ones
+            self._available_currencies.discard(curr_mapping.code)
+            
+            # adding row widget
+            self.currency_rows[curr_mapping.code] = row_widget
+            
+            if len(self._available_currencies) == 0:
+                self.add_btn.setEnabled(False)
+                
+        self.update_remove_button_state()
+    
+    
     def update_remove_button_state(self):
         self.remove_btn.setEnabled(bool(self.currency_rows))
 
@@ -36,14 +69,20 @@ class CurrencyTab(QWidget):
                 row_index = self.next_row_id
                 self.next_row_id += 1
                 
-                row_widget = CurrencyRow(c, self.sheet_columns, self.frame, self.frame_layout)
+                row_widget = CurrencyRow(
+                    currency_code=c, 
+                    sheet_columns=self.columns, 
+                    currency_mapping=None,
+                    parent=self.frame, 
+                    parent_layout=self.frame_layout
+                )
                 self.frame_layout.addWidget(row_widget, row_index, 0, 1, 4)
                 
                 if i == 0:
                     row_widget.c_factor_ledit.setFocus()
 
                 # removing new currency from available ones
-                self._available_currencies.remove(c)
+                self._available_currencies.discard(c)
                 
                 # adding row widget
                 self.currency_rows[c] = row_widget

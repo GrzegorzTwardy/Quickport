@@ -35,7 +35,7 @@ class ProductFieldMapping:
 class SheetRule:
     
     sheet_name: str
-    # header_row: int
+    source_schema_snapshot: list[str]
     pricebook_configs: list[PricebookConfig]
     product2_mappings: list[ProductFieldMapping]
     
@@ -64,6 +64,7 @@ class MapperModel:
             sheet_rules=[
                 SheetRule(
                     sheet_name=sr["sheet_name"],
+                    source_schema_snapshot=sr["source_schema_snapshot"],
                     pricebook_configs=[
                         PricebookConfig(
                             pricebook_id=pb["pricebook_id"],

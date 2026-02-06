@@ -10,7 +10,14 @@ from exceptions.gui_exceptions import MappingNotSetError
 
 class CurrencyRow(QWidget):
 
-    def __init__(self, currency_code, sheet_columns, parent=None, parent_layout=None):
+    def __init__(
+        self, 
+        currency_code, 
+        sheet_columns, 
+        currency_mapping: CurrencyMapping | None, 
+        parent=None, 
+        parent_layout=None
+    ):
         super().__init__(parent)
         
         self.setSizePolicy(
@@ -20,6 +27,7 @@ class CurrencyRow(QWidget):
         
         self.currency_code = currency_code
         self.sheet_columns = sheet_columns
+        self.currency_mapping = currency_mapping
 
         layout = QGridLayout(self)
         layout.setContentsMargins(0, 0, 0, 0)
@@ -32,6 +40,21 @@ class CurrencyRow(QWidget):
 
         self.curr_field_combo = QComboBox(self)
         self.curr_field_combo.addItem('...', None)
+        
+        # if self.currency_mapping is not None: # mapper is in editing mode
+        #     snapshot_cols_count = len(self.sheet_columns) - self.df_column_amount
+        #     if snapshot_cols_count < 0:
+        #         raise ValueError('Error while calculating available columns.')
+            
+        #     for i, col in enumerate(self.sheet_columns):
+        #         if i < snapshot_cols_count:
+        #             self.curr_field_combo.addItem(f'{i} (Saved in Mapper): {col}', col)
+        #         else:
+        #             self.curr_field_combo.addItem(f'{i}: {col}', col)
+        # else: # mapper is creating mode
+        #     for i, col in enumerate(self.sheet_columns):
+        #         self.curr_field_combo.addItem(f'{i}: {col}', col)
+        #     self.curr_field_combo.setCurrentIndex(0)
         for i, col in enumerate(self.sheet_columns):
             self.curr_field_combo.addItem(f'{i}: {col}', col)
         self.curr_field_combo.setCurrentIndex(0)
@@ -74,6 +97,19 @@ class CurrencyRow(QWidget):
         layout.setColumnStretch(1, 2)
         layout.setColumnStretch(2, 2)
         
+        if self.currency_mapping is not None:
+            self.load_mapping()
+        
+    
+    def load_mapping(self):
+        source_column = self.currency_mapping.source_column
+        index = self.curr_field_combo.findData(source_column)
+        cf = self.currency_mapping.conversion_factor
+        
+        if index != -1: 
+            self.curr_field_combo.setCurrentIndex(index)
+        self.c_factor_ledit.setText(str(cf))
+        
         
     def adjust_popup_width(self, combo):
         fm = combo.fontMetrics()
@@ -106,6 +142,7 @@ class CurrencyRow(QWidget):
 
     
 if __name__ == "__main__":
+    
     import sys
     from PySide6.QtWidgets import QApplication
 

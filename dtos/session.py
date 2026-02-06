@@ -3,6 +3,7 @@ from dtos.sf_metadata import SfMetadata
 
 from exceptions.global_exceptions import *
 
+# TODO: add username and available mappers to session constructor
 
 class AppSession(QObject):
     user_logged_in = Signal()

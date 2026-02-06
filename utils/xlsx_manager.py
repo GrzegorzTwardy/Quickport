@@ -28,32 +28,6 @@ def process_sheet(df: pd.DataFrame) -> pd.DataFrame:
 
     return df
 
-
-# def populate_qtable(self):
-
-#     df_model = QtCore.QAbstractTableModel()
-    
-#     def __init__(self, data, parent=None):
-#         super().__init__(parent)
-#         self._data = data
-
-#     def rowCount(self, parent=None):
-#         return len(self._data.values)
-
-#     def columnCount(self, parent=None):
-#         return self._data.columns.size
-
-#     def data(self, index, role=QtCore.Qt.DisplayRole):
-#         if index.isValid():
-#             if role == QtCore.Qt.DisplayRole:
-#                 return str(self._data.iloc[index.row()][index.column()])
-#         return None
-
-#     def headerData(self, col, orientation, role):
-#         if orientation == QtCore.Qt.Horizontal and role == QtCore.Qt.DisplayRole:
-#             return self._data.columns[col]
-#         return None
-
     
 if __name__ == "__main__":
     file_path = Path('./data/ab.xlsx')

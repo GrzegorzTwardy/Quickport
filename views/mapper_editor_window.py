@@ -12,6 +12,7 @@ from views.widgets.sheet_tab import SheetTab
 from views.widgets.dialog_boxes.checklist_dialog import execute_checklist_dialog
 from views.widgets.dialog_boxes.overwrite_dialog import overwrite_dialog_result
 from views.widgets.dialog_boxes.confirm_warning_dialog import confirm_warning_result
+from views.widgets.dialog_boxes.column_mapping_dialog import ColumnMappingDialog
 
 from core.mapper.mapper_model import MapperModel, SheetRule
 from dtos.session import AppSession
@@ -22,7 +23,7 @@ class MapperEditorWindow(QWidget):
     
     PATH_TO_MAPPERS = Path('./mappers/')
     
-    def __init__(self, session: AppSession, mapper_config=None):
+    def __init__(self, session: AppSession, mapper_path=None):
         super().__init__()
         session.validate()
         self.session = session
@@ -34,17 +35,20 @@ class MapperEditorWindow(QWidget):
         # GLOBAL VALUES
         self.path_to_pricebook = None
         self.sheet_tabs = {} # QWidgets representing each sheet's config
+        self.mapper_config = None
     
         # LOADED SHEETS
         self.all_sheets = {} # all dataframes from file
         self.sheets = {} # selected dataframes by user
 
-        # ==== SETTING UP MAPPER ====
-        self.setup_empty_mapper()
+        self._connect_signals()
         
-        # ==== LOADING CONFIG (if editing existing mapper) ====
-        if mapper_config:
-            self.load_mapper_config()
+        # ==== EDITING EXISTING MAPPER LOGIC ====
+        if mapper_path:
+            self.mapper_config = self.load_mapper_file(mapper_path)
+            self.ui.mapper_name_line_edit.setText(self.mapper_config.name)
+            self.add_sheet_tabs()
+            self.ui.save_mapper_button.setEnabled(True)
         
         self.ui.mapper_name_line_edit.setFocus()
         
@@ -68,11 +72,11 @@ class MapperEditorWindow(QWidget):
             "", 
             "Excel files (*.xlsx *.xls)"
         )
-        if file_path:
+        if file_path: 
             self.ui.input_file_label.setText(f'"{os.path.basename(file_path)}"')
             self.path_to_pricebook = file_path
-            # load data from chosen file
-            self.load_xlsx_file()
+            # self.mapper_config = None
+            self.load_xlsx_file() # load data from chosen file
             self.ui.save_mapper_button.setEnabled(True)
             
             
@@ -134,30 +138,115 @@ class MapperEditorWindow(QWidget):
         self.add_sheet_tabs()
 
     
+    # overriding mapper info after new .xlsx file is provided (in mapper editing mode)
+    def migrate_rule_to_new_columns(self, sheet_rule: SheetRule, column_map: dict, new_columns_list: list[str]):
+        for mapping in sheet_rule.product2_mappings:
+            # raw source_column
+            if mapping.source_column and mapping.source_column in column_map:
+                mapping.source_column = column_map[mapping.source_column]
+            
+            # mapping args
+            if mapping.args:
+                if 'source_column' in mapping.args:
+                    old_col = mapping.args['source_column']
+                    if old_col in column_map:
+                        mapping.args['source_column'] = column_map[old_col]
+                        
+                if 'source_columns' in mapping.args:
+                    current_list = mapping.args['source_columns']
+                    if isinstance(current_list, list):
+                        new_list = []
+                        for col in current_list:
+                            new_list.append(column_map.get(col, col))
+                        mapping.args['source_columns'] = new_list
+                # place for future function's args management
+
+        for pb_config in sheet_rule.pricebook_configs:
+            for curr_mapping in pb_config.currencies:
+                if curr_mapping.source_column in column_map:
+                    curr_mapping.source_column = column_map[curr_mapping.source_column]
+                    
+        sheet_rule.source_schema_snapshot = new_columns_list
+
+
+    # OLD LOGIC add_sheet_tabs
+    # def add_sheet_tabs(self):
+    #     if self.mapper_config is None: # from file (new mapper)
+    #         for name, sheet in self.sheets.items():
+    #             new_tab = SheetTab(sheet, name, None, self.session, self)
+    #             self.sheet_tabs[name] = new_tab
+    #             self.ui.sheet_tabs.addTab(new_tab, name)
+    #     else: # from mapper config (editing existing mapper)
+    #         for sheet_rule in self.mapper_config.sheet_rules:
+    #             new_tab = SheetTab(None, sheet_rule.sheet_name, sheet_rule, self.session, self)
+    #             self.sheet_tabs[sheet_rule.sheet_name] = new_tab
+    #             self.ui.sheet_tabs.addTab(new_tab, sheet_rule.sheet_name)
+    
     def add_sheet_tabs(self):
-        for name, sheet in self.sheets.items():
-            new_tab = SheetTab(sheet, name, self)
-            self.sheet_tabs[name] = new_tab
-            self.ui.sheet_tabs.addTab(new_tab, name)
+        if self.sheets: # excel file loaded
+            existing_rules_map = {}
+            if self.mapper_config: # if mapper in editing mode and excel file loaded
+                for rule in self.mapper_config.sheet_rules:
+                    existing_rules_map[rule.sheet_name] = rule
+
+            for name, sheet_df in self.sheets.items():
+                rule_for_sheet = existing_rules_map.get(name)
+                
+                if rule_for_sheet:
+                    missing_cols = [ # mapper cols missing in excel file
+                        col for col in rule_for_sheet.source_schema_snapshot 
+                        if col not in sheet_df.columns
+                    ]
+                    
+                    if missing_cols:
+                        dialog = ColumnMappingDialog(
+                            rule_for_sheet.source_schema_snapshot, 
+                            sheet_df.columns.tolist(), 
+                            name, 
+                            self
+                        )
+                        
+                        if dialog.exec():
+                            excel_to_mapper_map = dialog.get_mapping() 
+                            
+                            # get_mapping returns {Excel: Mapper}, we need {Mapper: Excel}
+                            mapper_to_excel_map = {v: k for k, v in excel_to_mapper_map.items()}
+                            
+                            self.migrate_rule_to_new_columns(
+                                rule_for_sheet, 
+                                mapper_to_excel_map, 
+                                sheet_df.columns.tolist()
+                            )
+                        else:
+                            pass
+                        
+                new_tab = SheetTab(sheet_df, name, rule_for_sheet, self.session, self)
+                self.sheet_tabs[name] = new_tab
+                self.ui.sheet_tabs.addTab(new_tab, name)
+                
+        elif self.mapper_config: # mapper in edit mode without excel file provided
+            for sheet_rule in self.mapper_config.sheet_rules:
+                name = sheet_rule.sheet_name
+                new_tab = SheetTab(None, name, sheet_rule, self.session, self)
+                self.sheet_tabs[name] = new_tab
+                self.ui.sheet_tabs.addTab(new_tab, name)
     
-    
-    # ==== SETTING UP EMPTY MAPPER =====
-    def setup_empty_mapper(self):
-        self._connect_signals()
-        # TODO: sf_api.connect_to_salesforce()
-        
-        # ==== TESTING =====
-        self.auto_select_xlsx_TEST()
-        # ==================
-        
     
     # ==== EDITING EXISTING MAPPER =====
-    def load_mapper_config(self):
-        pass
-    
+    def load_mapper_file(self, mapper_path):
+        try:
+            with open(mapper_path, 'r', encoding='utf-8') as mapper_file:
+                mapper_dict = json.load(mapper_file)
+                return MapperModel.from_dict(mapper_dict)
+        except FileNotFoundError:
+            raise FileNotFoundError(f"Mapper file does not exist: '{mapper_path}'.")
+        except json.JSONDecodeError:
+            raise ValueError(f"Invalid JSON in file: '{mapper_path}'.")
+                
     
     # ==== SAVING MAPPER ======
     def save_mapper(self):
+        # TODO: add mapper name to user data
         try:
             # collecting data
             mapper_name = self.ui.mapper_name_line_edit.text()
@@ -204,13 +293,26 @@ class MapperEditorWindow(QWidget):
 if __name__ == "__main__":
     import sys
     from PySide6.QtWidgets import QApplication
+    from dtos.session import AppSession
+    from core.profile.profile_model import Profile
+    from views.mapper_editor_window import MapperEditorWindow
+    from salesforce_api.salesforce_api import SalesforceApi
+
+    profile = Profile.from_json('./cert/test_creds.json')    
+    sf_api = SalesforceApi(profile)
+    sf_api.connect()
 
     session = AppSession()
-    session.test_login()
+    session.login(
+        user_id='123213', 
+        sf_metadata=sf_api.get_user_sf_metadata()
+    )
+    # session.test_login()
 
     app = QApplication(sys.argv)
 
-    window = MapperEditorWindow(session, None)
+    # window = MapperEditorWindow(session, None)
+    window = MapperEditorWindow(session, './mappers/invalid-ab-mapper.json')
     window.show()
 
     sys.exit(app.exec())

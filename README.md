@@ -4,9 +4,10 @@ Aplikacja desktopowa, która automatyzuje import i transformację cenników z pl
 # Co już działa (moduły):
  - pliki widoków,
  - tworzenie i zapis pliku .json mappera za pomocą GUI
- - mapowanie danych z cenników xlsx/xls za pomocą pliku .json mappera do csv (dla obiektu Product2, ProductEntries w trakcie)
+ - mapowanie danych za pomocą mappera
+ - ładowanie pliku mappera do GUI (edycja mapppera)
+ - API z Salesforce za pomocą Bulk API 2.0 (połączenie z platformą, upsert do Product2 i PricebookEntry)
 
  # Co zostało:
- - api z Salesforce,
  - serwis profili,
- - widoki: menu, profile i ich integracja
+ - integracja okien
