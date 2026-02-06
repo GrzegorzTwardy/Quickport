@@ -1,5 +1,6 @@
 from PySide6.QtWidgets import (QApplication, QWidget, QFileDialog, QMessageBox)
 from PySide6.QtGui import QIcon
+from PySide6.QtCore import Signal
 
 import os
 import json
@@ -19,7 +20,11 @@ from dtos.session import AppSession
 from exceptions.gui_exceptions import MappingNotSetError
 
 
+# TODO: this doesnt work -> self.ui.mapper_name_line_edit.setText(self.mapper_config.name)
+
 class MapperEditorWindow(QWidget):
+    
+    refresh_mapper_list = Signal()
     
     PATH_TO_MAPPERS = Path('./mappers/')
     
@@ -283,12 +288,14 @@ class MapperEditorWindow(QWidget):
                     'Mapper Saved',
                     f'Mapper "{mapper.name}" has been saved.'
                 )
+                
+                self.refresh_mapper_list.emit()
+                
                 self.close()
 
         except MappingNotSetError as e:
             QMessageBox.warning(self, 'Mapping Error', str(e))
-
-            
+        
 
 if __name__ == "__main__":
     import sys

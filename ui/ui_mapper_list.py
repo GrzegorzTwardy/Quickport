@@ -46,7 +46,6 @@ class Ui_MapperListMain(object):
         self.gridLayout.setContentsMargins(9, 0, 0, 0)
         self.addButton = QPushButton(self.buttonsFrame)
         self.addButton.setObjectName(u"addButton")
-        self.addButton.setEnabled(False)
 
         self.gridLayout.addWidget(self.addButton, 0, 0, 1, 1)
 
@@ -56,11 +55,11 @@ class Ui_MapperListMain(object):
 
         self.gridLayout.addWidget(self.editButton, 1, 0, 1, 1)
 
-        self.removeButton = QPushButton(self.buttonsFrame)
-        self.removeButton.setObjectName(u"removeButton")
-        self.removeButton.setEnabled(False)
+        self.deleteButton = QPushButton(self.buttonsFrame)
+        self.deleteButton.setObjectName(u"deleteButton")
+        self.deleteButton.setEnabled(False)
 
-        self.gridLayout.addWidget(self.removeButton, 2, 0, 1, 1)
+        self.gridLayout.addWidget(self.deleteButton, 2, 0, 1, 1)
 
         self.verticalSpacer = QSpacerItem(20, 193, QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Expanding)
 
@@ -85,7 +84,7 @@ class Ui_MapperListMain(object):
         self.label.setText(QCoreApplication.translate("MapperListMain", u"Choose mapper:", None))
         self.addButton.setText(QCoreApplication.translate("MapperListMain", u"Add", None))
         self.editButton.setText(QCoreApplication.translate("MapperListMain", u"Edit", None))
-        self.removeButton.setText(QCoreApplication.translate("MapperListMain", u"Remove", None))
+        self.deleteButton.setText(QCoreApplication.translate("MapperListMain", u"Delete", None))
         self.backButton.setText(QCoreApplication.translate("MapperListMain", u"Back", None))
     # retranslateUi
 

@@ -12,6 +12,10 @@ from views.widgets.utils.no_scroll_combo_box import NoScrollComboBox
 from exceptions.gui_exceptions import MappingNotSetError
 
 
+# TODO: 
+# - display mapping args while hovering over function combo
+# - when mapping function is chosen from combo display sf_field hint
+
 class Product2Row(QObject):
 
     def __init__(
