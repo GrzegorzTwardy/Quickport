@@ -40,7 +40,7 @@ class ArgDialog(QDialog):
     
     def closeEvent(self, event: QCloseEvent):
         if self.saved:
-            event.accept()
+            super().closeEvent(event)
             return
 
         result = QMessageBox.question(
@@ -53,7 +53,7 @@ class ArgDialog(QDialog):
 
         if result == QMessageBox.Yes:
             self.canceled.emit()
-            event.accept()
+            super().closeEvent(event)
         else:
             event.ignore()
 
@@ -67,7 +67,7 @@ class ArgDialog(QDialog):
         self.args = self.args_widget.get_args_from_ui()
         self.args_saved.emit(self.args)
         self.saved = True
-        self.close()
+        self.accept()
     
     
     def setup_args(self):

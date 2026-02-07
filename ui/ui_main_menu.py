@@ -187,7 +187,7 @@ class Ui_MainMenu(object):
     # setupUi
 
     def retranslateUi(self, MainMenu):
-        MainMenu.setWindowTitle(QCoreApplication.translate("MainMenu", u"SF Price List Importer", None))
+        MainMenu.setWindowTitle(QCoreApplication.translate("MainMenu", u"Quickport", None))
         self.actionShowInfo.setText(QCoreApplication.translate("MainMenu", u"Show Info", None))
         self.actionLanguage.setText(QCoreApplication.translate("MainMenu", u"Language", None))
         self.profilesButton.setText(QCoreApplication.translate("MainMenu", u"Profiles", None))

@@ -82,6 +82,7 @@ class MapperModel:
                 )
                 for sr in data["sheet_rules"]
             ],
+            name=data["name"]
         )
 
 

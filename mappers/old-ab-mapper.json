@@ -3,6 +3,21 @@
     "sheet_rules": [
         {
             "sheet_name": "renewals",
+            "source_schema_snapshot": [
+                "Update Status",
+                "Effective Date",
+                "Name",
+                "Restricted",
+                "Category",
+                "UPC",
+                "SKU",
+                "MSRP",
+                "Method of Delivery",
+                "Dimensions of \nunit in box\n(inches)",
+                "Weight of \nunit in box (LBS)",
+                "Product Family",
+                "Product Group"
+            ],
             "pricebook_configs": [
                 {
                     "pricebook_id": "01sd200000C3Q77AAF",
@@ -10,12 +25,12 @@
                         {
                             "code": "EUR",
                             "source_column": "MSRP",
-                            "conversion_factor": 1.0
+                            "conversion_factor": 4.0
                         },
                         {
                             "code": "PLN",
                             "source_column": "MSRP",
-                            "conversion_factor": 4.0
+                            "conversion_factor": 5.0
                         }
                     ]
                 }
@@ -173,6 +188,6 @@
             ]
         }
     ],
-    "id": "8364ad64-19fe-4aa7-bc86-a5409ee6d296",
+    "id": "b95a41db-4bcc-44ae-a1ce-60d8f596c5e7",
     "name": "old-ab-mapper"
 }

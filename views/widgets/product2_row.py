@@ -8,16 +8,13 @@ from core.mapper.mapper_model import ProductFieldMapping
 from core.mapper.mapper_functions import mapping_functions_list
 from views.widgets.utils.hover_label import HoverLabel
 from views.widgets.dialog_boxes.arg_dialog import ArgDialog
-from views.widgets.utils.no_scroll_combo_box import NoScrollComboBox
+# from views.widgets.utils.no_scroll_combo_box import NoScrollComboBox
+from views.widgets.utils.hover_combo import HoverComboBox
 from exceptions.gui_exceptions import MappingNotSetError
 
 
-# TODO: 
-# - display mapping args while hovering over function combo
-# - when mapping function is chosen from combo display sf_field hint
-
 class Product2Row(QObject):
-
+    
     def __init__(
         self, 
         field_name: str, 
@@ -43,7 +40,7 @@ class Product2Row(QObject):
         
         if self.field_mapping is not None:
             self.load_mapping()
-            # self.update_combos()
+            self.update_combos()
 
         
     def connect_signals(self):
@@ -51,11 +48,12 @@ class Product2Row(QObject):
         self.function_combo.currentIndexChanged.connect(self.update_combos)
         self.function_combo.activated.connect(self.on_function_selected)
         self.include_checkbox.checkStateChanged.connect(self.change_row_state)
-           
+
     
     def load_mapping(self):
         if not self.field_mapping.included:
             self.include_checkbox.setChecked(False)
+            self.change_row_state()
             
         if self.field_mapping.source_column is not None:
             source_column = self.field_mapping.source_column
@@ -68,6 +66,7 @@ class Product2Row(QObject):
             if index != -1: 
                 self.function_combo.setCurrentIndex(index)
                 self.mapping_args = self.field_mapping.args if self.field_mapping.args else {}
+                self.function_combo.updateData(self.mapping_args)
                 self.last_saved_mapping = mapping_type
             
         if self.field_mapping.allows_nulls:
@@ -85,6 +84,11 @@ class Product2Row(QObject):
 
 
     def update_combos(self):
+        if not self.include_checkbox.isChecked():
+            self.field_combo.setEnabled(False)
+            self.function_combo.setEnabled(False)
+            return
+        
         event_combo = self.sender()
         
         if event_combo is None: # manual invoke (for editing mapper)
@@ -150,6 +154,7 @@ class Product2Row(QObject):
         
         def _save_args(args):
             self.mapping_args = args
+            self.function_combo.updateData(self.mapping_args)
             self.last_saved_mapping = mapping_name
             
         def _on_canceled():
@@ -166,6 +171,12 @@ class Product2Row(QObject):
             
         self._arg_window.args_saved.connect(_save_args)
         self._arg_window.canceled.connect(_on_canceled)
+        
+        # === label toggle logic ===
+        self.name_label.show_popup_manual()
+        self._arg_window.finished.connect(lambda _: self.name_label.hide_popup_manual())
+        # ==========================
+        
         self._arg_window.show()
         self._arg_window.raise_()
         self._arg_window.activateWindow()
@@ -209,26 +220,12 @@ class Product2Row(QObject):
         self.field_combo = QComboBox(parent)
         self.field_combo.addItem('...', None)
         
-        # if self.df_column_amount is not None: 
-        #     snapshot_cols_count = len(self.sheet_columns) - self.df_column_amount
-            
-        #     if snapshot_cols_count < 0:
-        #         raise ValueError('An error occured while calculating available columns.')
-                
-        #     for i, col in enumerate(self.sheet_columns):
-        #         if i < snapshot_cols_count:
-        #             self.field_combo.addItem(f'{i} (Saved in Mapper): {col}', col)
-        #         else:
-        #             self.field_combo.addItem(f'{i}: {col}', col)
-        # else:
-        #     for i, col in enumerate(self.sheet_columns):
-        #         self.field_combo.addItem(f'{i}: {col}', col)
         for i, col in enumerate(self.sheet_columns):
             self.field_combo.addItem(f'{i}: {col}', col)
             
         self.field_combo.setCurrentIndex(0)
         
-        self.function_combo = NoScrollComboBox(parent)
+        self.function_combo = HoverComboBox(self.mapping_args, parent)
         self.function_combo.addItem('...', None)
         for f in self.functions:
             self.function_combo.addItem(f, f)
@@ -237,21 +234,22 @@ class Product2Row(QObject):
         self.allow_nulls_checkbox = QCheckBox(parent)
         self.allow_nulls_checkbox.setSizePolicy(checkbox_size_policy)
             
-        for combo in (self.field_combo, self.function_combo):
-            combo.setMinimumWidth(0)
-            combo.setMinimumContentsLength(1)
-            combo.setSizeAdjustPolicy(
-                QComboBox.AdjustToMinimumContentsLengthWithIcon
-            )
-            
-            # closed state
-            combo.currentTextChanged.connect(
-                lambda text, c=combo: c.setToolTip(text)
-            )
+        self.field_combo.setMinimumWidth(0)
+        self.field_combo.setMinimumContentsLength(1)
+        self.field_combo.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        self.field_combo.view().setTextElideMode(Qt.ElideNone)
+        
+        self.field_combo.currentTextChanged.connect(
+            lambda text: self.field_combo.setToolTip(text)
+        )
+        self.adjust_popup_width(self.field_combo)
 
-            # popup
-            combo.view().setTextElideMode(Qt.ElideNone)
-            self.adjust_popup_width(combo)
+        self.function_combo.setMinimumWidth(0)
+        self.function_combo.setMinimumContentsLength(1)
+        self.function_combo.setSizeAdjustPolicy(QComboBox.AdjustToMinimumContentsLengthWithIcon)
+        self.function_combo.view().setTextElideMode(Qt.ElideNone)
+        
+        self.adjust_popup_width(self.function_combo)
 
     
 if __name__ == "__main__":

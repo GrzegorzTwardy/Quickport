@@ -10,7 +10,6 @@ from ui.ui_mapper_list import Ui_MapperListMain
 from dtos.session import AppSession
 
 
-# TODO: aktualizacja listy po zamknięciu okna MapperEditorWindow
 class MapperListWindow(QWidget):
     
     PATH_TO_MAPPERS = Path('./mappers/')
@@ -26,10 +25,9 @@ class MapperListWindow(QWidget):
         
         # === views ===
         self.editor_new = None
-        self.editor_editing = None
+        self.opened_editors = {} # path: MapperEditorWindow instance
         # =============
         
-        # self.available_mappers = {} # name: path
         self.current_mapper_path = ''
         self.selected_mapper_idx = 0
         
@@ -42,6 +40,7 @@ class MapperListWindow(QWidget):
         self.ui.addButton.clicked.connect(self.add_new_mapper)
         self.ui.editButton.clicked.connect(self.edit_mapper)
         self.ui.deleteButton.clicked.connect(self.delete_mapper)
+        self.ui.backButton.clicked.connect(lambda: self.close())
     
     
     def on_item_selected(self, row: int):
@@ -59,7 +58,6 @@ class MapperListWindow(QWidget):
             mapper_item = QListWidgetItem(mapper_name)
             mapper_item.setData(Qt.UserRole, json_file)
             self.ui.mapperList.addItem(mapper_item)
-            # self.available_mappers[mapper_name] = mapper_item
         if self.ui.mapperList.count() > 0:
             try:
                 self.ui.mapperList.setCurrentRow(self.selected_mapper_idx)
@@ -69,7 +67,7 @@ class MapperListWindow(QWidget):
             self.ui.deleteButton.setEnabled(True)
     
     
-    def add_new_mapper(self):
+    def add_new_mapper(self): # singleton
         if self.editor_new is None:
             self.editor_new = MapperEditorWindow(self.session, None)
             self.editor_new.refresh_mapper_list.connect(self.loadMappers)
@@ -77,6 +75,7 @@ class MapperListWindow(QWidget):
             self.editor_new.show()
         else:
             self.editor_new.show()
+            self.editor_new.raise_()
             self.editor_new.activateWindow()
         
         if not self.ui.editButton.isEnabled():
@@ -85,19 +84,32 @@ class MapperListWindow(QWidget):
             self.ui.deleteButton.setEnabled(True)
             
             
-    def edit_mapper(self):
-        if self.editor_editing is not None: # if window is already opened but user selected another mapper to edit
-            self.editor_editing.close() # close old edit window
-            
-        if self.editor_editing is None:
-            self.editor_editing = MapperEditorWindow(self.session, self.current_mapper_path)
-            self.editor_editing.refresh_mapper_list.connect(self.loadMappers)
-            self.editor_editing.destroyed.connect(lambda: setattr(self, 'editor_editing', None))
-            self.editor_editing.show()
-        else:
-            self.editor_editing.show()
-            self.editor_editing.activateWindow()
-            
+    def edit_mapper(self): 
+        if not self.current_mapper_path:
+            return
+
+        target_path = self.current_mapper_path
+
+        if target_path in self.opened_editors:
+            existing_window = self.opened_editors[target_path]
+            existing_window.show()
+            existing_window.raise_()
+            existing_window.activateWindow()
+            return
+
+        new_window = MapperEditorWindow(self.session, target_path)
+        new_window.refresh_mapper_list.connect(self.loadMappers)
+        
+        self.opened_editors[target_path] = new_window
+        
+        new_window.destroyed.connect(lambda: self.cleanup_editor(target_path))
+        new_window.show()
+    
+    
+    def cleanup_editor(self, path): # remove window instance from dict
+        if path in self.opened_editors:
+            del self.opened_editors[path]        
+    
     
     def delete_mapper(self):
         result = QMessageBox.question(
@@ -108,7 +120,10 @@ class MapperListWindow(QWidget):
             QMessageBox.No
         )
 
-        if result:
+        if result == QMessageBox.Yes:
+            if self.current_mapper_path in self.opened_editors:
+                self.opened_editors[self.current_mapper_path].close()
+            
             self.current_mapper_path.unlink()
             self.ui.mapperList.takeItem(self.selected_mapper_idx)
             
@@ -138,11 +153,11 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     
     session = AppSession()
-    session.test_login()
-    # session.login(
-    #     user_id='123213', 
-    #     sf_metadata=sf_api.get_user_sf_metadata()
-    # )
+    # session.test_login()
+    session.login(
+        user_id='123213', 
+        sf_metadata=sf_api.get_user_sf_metadata()
+    )
 
     window = MapperListWindow(session)
     window.show()

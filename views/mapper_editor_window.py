@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QApplication, QWidget, QFileDialog, QMessageBox)
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import Signal
+from PySide6.QtCore import Signal, Qt
 
 import os
 import json
@@ -30,6 +30,7 @@ class MapperEditorWindow(QWidget):
     
     def __init__(self, session: AppSession, mapper_path=None):
         super().__init__()
+        self.setAttribute(Qt.WA_DeleteOnClose)
         session.validate()
         self.session = session
         
@@ -244,9 +245,11 @@ class MapperEditorWindow(QWidget):
                 mapper_dict = json.load(mapper_file)
                 return MapperModel.from_dict(mapper_dict)
         except FileNotFoundError:
-            raise FileNotFoundError(f"Mapper file does not exist: '{mapper_path}'.")
+            raise FileNotFoundError(f"Mapper file does not exist: '{mapper_path.name}'.")
         except json.JSONDecodeError:
-            raise ValueError(f"Invalid JSON in file: '{mapper_path}'.")
+            raise ValueError(f"Invalid JSON in file: '{mapper_path.name}'.")
+        except KeyError:
+            raise KeyError(f"Mapper file corrupted: '{mapper_path.name}'.")
                 
     
     # ==== SAVING MAPPER ======
