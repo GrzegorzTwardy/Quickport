@@ -1,3 +1,68 @@
+# import io
+# import time
+# import logging
+# import requests
+# import pandas as pd
+# from pathlib import Path
+# from dtos.session import AppSession
+# from dtos.sf_metadata import SfMetadata
+# from core.profile.profile_model import Profile
+# from simple_salesforce import Salesforce
+# from exceptions.sf_api_exceptions import *
+
+# class SalesforceApi:
+    
+#     def __init__(self, profile: Profile):
+#         self.sf = None
+#         self.username = profile.uname
+#         self.password = profile.password
+#         self.security_token = profile.security_token
+#         self.consumer_key = profile.consumer_key
+#         self.consumer_secret = profile.consumer_secret
+#         self.instance_url = profile.instance_url
+
+#         logging.basicConfig(
+#             level=logging.INFO,
+#             format='%(asctime)s | %(levelname)s | %(message)s'
+#         )
+#         self.logger = logging.getLogger(__name__)
+
+#         self.standard_pricebook_dict = {} 
+#         self.custom_pricebooks_dict = {} 
+        
+#         self.execution_errors = [] # [{'Source': str, 'Message': str, 'Details': str}]
+        
+#         self.connect()
+#         self.load_all_pricebooks()
+
+
+#     def connect(self) -> Salesforce:
+#         url = f'{self.instance_url}/services/oauth2/token'
+#         data = {
+#             'grant_type': 'password',
+#             'client_id': self.consumer_key,
+#             'client_secret': self.consumer_secret,
+#             'username': self.username,
+#             'password': f'{self.password}{self.security_token}',
+#         }
+
+#         try:
+#             response = requests.post(url, data=data, timeout=15)
+#             response.raise_for_status()
+#             payload = response.json()
+
+#             if 'access_token' not in payload or 'instance_url' not in payload:
+#                 raise ValueError(f'Invalid OAuth response: {payload}')
+
+#             self.sf = Salesforce(instance_url=payload['instance_url'], session_id=payload['access_token'])
+#             self.logger.info('Connection with Salesforce established.')
+            
+#         except Exception as e:
+#             self.logger.error(f'Connection failed: {e}')
+#             self._register_error("Connection", str(e))
+#             raise
+
+
 import io
 import time
 import logging
@@ -6,20 +71,19 @@ import pandas as pd
 from pathlib import Path
 from dtos.session import AppSession
 from dtos.sf_metadata import SfMetadata
-from core.profile.profile_model import Profile
+from dtos.credentials import Credentials
 from simple_salesforce import Salesforce
 from exceptions.sf_api_exceptions import *
 
+
 class SalesforceApi:
     
-    def __init__(self, profile: Profile):
+    def __init__(self, creds: Credentials):
         self.sf = None
-        self.username = profile.uname
-        self.password = profile.password
-        self.security_token = profile.security_token
-        self.consumer_key = profile.consumer_key
-        self.consumer_secret = profile.consumer_secret
-        self.instance_url = profile.instance_url
+
+        self.access_token = creds.access_token
+        self.refresh_token = creds.refresh_token
+        self.instance_url = creds.instance_url
 
         logging.basicConfig(
             level=logging.INFO,
@@ -29,38 +93,64 @@ class SalesforceApi:
 
         self.standard_pricebook_dict = {} 
         self.custom_pricebooks_dict = {} 
-        
-        self.execution_errors = [] # [{'Source': str, 'Message': str, 'Details': str}]
+        self.execution_errors = [] 
         
         self.connect()
         self.load_all_pricebooks()
-
+        
 
     def connect(self) -> Salesforce:
-        url = f'{self.instance_url}/services/oauth2/token'
-        data = {
-            'grant_type': 'password',
-            'client_id': self.consumer_key,
-            'client_secret': self.consumer_secret,
-            'username': self.username,
-            'password': f'{self.password}{self.security_token}',
-        }
-
+        """
+        Inicjalizuje połączenie za pomocą istniejącego Access Tokena.
+        Jeśli token wygasł, próbuje go odświeżyć za pomocą Refresh Tokena.
+        """
         try:
-            response = requests.post(url, data=data, timeout=15)
-            response.raise_for_status()
-            payload = response.json()
-
-            if 'access_token' not in payload or 'instance_url' not in payload:
-                raise ValueError(f'Invalid OAuth response: {payload}')
-
-            self.sf = Salesforce(instance_url=payload['instance_url'], session_id=payload['access_token'])
-            self.logger.info('Connection with Salesforce established.')
+            # simple_salesforce nie weryfikuje tokena w momencie inicjalizacji,
+            # dlatego robimy szybki test (np. pobranie limitów)
+            self.sf = Salesforce(
+                instance_url=self.instance_url, 
+                session_id=self.access_token
+            )
+            
+            # Szybki test połączenia - rzuci błędem jeśli access_token wygasł
+            self.sf.limits()
+            self.logger.info('Połączenie z Salesforce ustanowione (Access Token aktywny).')
             
         except Exception as e:
-            self.logger.error(f'Connection failed: {e}')
-            self._register_error("Connection", str(e))
-            raise
+            self.logger.warning(f'Access token prawdopodobnie wygasł. Próba odświeżenia... Błąd: {e}')
+            self._refresh_access_token()
+            # Rekursywne połączenie po odświeżeniu
+            self.sf = Salesforce(
+                instance_url=self.instance_url, 
+                session_id=self.access_token
+            )
+            self.logger.info('Połączenie ustanowione po odświeżeniu tokena.')
+
+    def _refresh_access_token(self):
+        """Odświeża Access Token używając Refresh Tokena."""
+        if not self.refresh_token:
+            raise ValueError("Brak Refresh Tokena. Użytkownik musi zalogować się ponownie.")
+
+        # Ustalenie endpointu na podstawie instance_url (lub sztywno login/test.salesforce.com)
+        token_url = f'{self.instance_url}/services/oauth2/token'
+        
+        data = {
+            'grant_type': 'refresh_token',
+            'client_id': self.consumer_key,
+            'refresh_token': self.refresh_token
+        }
+
+        response = requests.post(token_url, data=data, timeout=15)
+        
+        if response.status_code != 200:
+            self.logger.error(f"Nie udało się odświeżyć tokena: {response.text}")
+            raise ConnectionError("Refresh token wygasł lub jest nieprawidłowy. Wymagane ponowne logowanie w przeglądarce.")
+            
+        payload = response.json()
+        self.access_token = payload['access_token']
+        # Warto tutaj również zaktualizować obiekt Profile i zapisać nowy token w pliku/bazie!
+        
+        self.logger.info("Access Token został pomyślnie odświeżony.")
 
 
     # === Metadata Helpers === 
@@ -253,7 +343,7 @@ class SalesforceApi:
         return results
 
     # == PricebookEntry ===
-    def load_pricebbok_entry(self, data: pd.DataFrame | str | Path, poll_interval: int = 2):
+    def load_pricebook_entry(self, data: pd.DataFrame | str | Path, poll_interval: int = 2):
         self.logger.info("Start synchronizing PricebookEntries...")
         
         if isinstance(data, (str, Path)):
@@ -351,33 +441,26 @@ class SalesforceApi:
     
     
 if __name__ == '__main__':
-    from core.mapper.mapper_engine import MapperEngine
-    
-    pb_path = Path('./data/ab.xlsx')
-    m_path = Path('./mappers/ab-mapper.json')
-    
-    profile = Profile.from_json('./cert/test_creds.json')    
-    sf_api = SalesforceApi(profile)
-    sf_api.connect()
+    pass
 
-    session = AppSession()
-    session.login(
-        user_id='123213', 
-        sf_metadata=sf_api.get_user_sf_metadata()
-    )
+    # session = AppSession()
+    # session.login(
+    #     user_id='123213', 
+    #     sf_metadata=sf_api.get_user_sf_metadata()
+    # )
     
-    engine = MapperEngine(pb_path, m_path, session)
-    prod2_df, pb_entry_df = engine.map_data()
+    # engine = MapperEngine(pb_path, m_path, session)
+    # prod2_df, pb_entry_df = engine.map_data()
     
-    prod_results = sf_api.load_product2(prod2_df, 'upsert') 
+    # prod_results = sf_api.load_product2(prod2_df, 'upsert') 
 
-    total_success = 0
-    if prod_results.get('update'):
-        total_success += prod_results['update']['success']
-    if prod_results.get('insert'):
-        total_success += prod_results['insert']['success']
+    # total_success = 0
+    # if prod_results.get('update'):
+    #     total_success += prod_results['update']['success']
+    # if prod_results.get('insert'):
+    #     total_success += prod_results['insert']['success']
 
-    if total_success > 0:
-        sf_api.load_pricebbok_entry(pb_entry_df)
-    else:
-        print("Brak poprawnie załadowanych produktów. Pomijam ładowanie cenników.")
+    # if total_success > 0:
+    #     sf_api.load_pricebook_entry(pb_entry_df)
+    # else:
+    #     print("Brak poprawnie załadowanych produktów. Pomijam ładowanie cenników.")

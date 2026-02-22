@@ -3,7 +3,6 @@ from dtos.sf_metadata import SfMetadata
 
 from exceptions.global_exceptions import *
 
-# TODO: add username and available mappers to session constructor
 
 class AppSession(QObject):
     user_logged_in = Signal()
@@ -11,29 +10,20 @@ class AppSession(QObject):
 
     def __init__(self):
         super().__init__()
-        self.is_authenticated: bool = False
-        self.user_id: str | None = None
         self.sf_metadata: SfMetadata | None = None
 
 
-    def login(self, user_id: str, sf_metadata: SfMetadata):
-        self.user_id = user_id
+    def login(self, sf_metadata: SfMetadata):
         self.sf_metadata = sf_metadata
-        self.is_authenticated = True
         self.user_logged_in.emit()
 
 
     def logout(self):
-        self.user_id = None
         self.sf_metadata = None
-        self.is_authenticated = False
         self.user_logged_out.emit()
         
         
     def validate(self):
-        if not self.user_id:
-            raise ProfileNotFoundError(self.user_id)
-
         if not self.sf_metadata:
             raise SalesforceDataMissingError('Couldn\'t load data from Salesforce')
 
@@ -46,7 +36,7 @@ class AppSession(QObject):
 
         for attr, label in checks:
             if not getattr(self.sf_metadata, attr):
-                raise SalesforceDataMissingError(label)
+                raise SalesforceDataMissingError(f'Missing Salesforce data: {label}')
 
 
     def test_login(self):
@@ -60,7 +50,6 @@ class AppSession(QObject):
             }
         
         self.login(
-            user_id='343243242',
             sf_metadata=SfMetadata(
                 product2_fields=fields_to_dict(['name', 'SKU', 'manu', 'category', 'desc', 'a-really-long-field-name-123-2321-231']),
                 pb_entries_fields=fields_to_dict(['PricebookId', 'Product2Id', 'UnitPrice', 'IsActive']),

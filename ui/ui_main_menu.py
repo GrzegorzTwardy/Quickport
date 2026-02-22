@@ -19,7 +19,7 @@ from PySide6.QtGui import (QAction, QBrush, QColor, QConicalGradient,
 from PySide6.QtWidgets import (QApplication, QFrame, QGridLayout, QGroupBox,
     QHBoxLayout, QLabel, QListWidget, QListWidgetItem,
     QMainWindow, QMenu, QMenuBar, QPushButton,
-    QSizePolicy, QSpacerItem, QStatusBar, QWidget)
+    QSizePolicy, QSpacerItem, QStatusBar, QWidget, QCheckBox)
 
 class Ui_MainMenu(object):
     def setupUi(self, MainMenu):
@@ -46,18 +46,24 @@ class Ui_MainMenu(object):
         self.configFrame.setFrameShadow(QFrame.Shadow.Raised)
         self.gridLayout_2 = QGridLayout(self.configFrame)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
-        self.profilesButton = QPushButton(self.configFrame)
-        self.profilesButton.setObjectName(u"profilesButton")
+        self.loginButton = QPushButton(self.configFrame)
+        self.loginButton.setObjectName(u"loginButton")
         sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.profilesButton.sizePolicy().hasHeightForWidth())
-        self.profilesButton.setSizePolicy(sizePolicy1)
-        self.profilesButton.setMinimumSize(QSize(81, 25))
-        self.profilesButton.setMaximumSize(QSize(16777215, 16777215))
-        self.profilesButton.setFlat(False)
+        sizePolicy1.setHeightForWidth(self.loginButton.sizePolicy().hasHeightForWidth())
+        self.loginButton.setSizePolicy(sizePolicy1)
+        self.loginButton.setMinimumSize(QSize(81, 25))
+        self.loginButton.setMaximumSize(QSize(16777215, 16777215))
+        self.loginButton.setFlat(False)
 
-        self.gridLayout_2.addWidget(self.profilesButton, 1, 0, 1, 1)
+        self.gridLayout_2.addWidget(self.loginButton, 1, 0, 1, 1)
+        
+        self.logToSandbox = QCheckBox(self.configFrame)
+        self.logToSandbox.setObjectName(u"logToSandbox")
+        self.logToSandbox.setChecked(False)
+
+        self.gridLayout_2.addWidget(self.logToSandbox, 2, 0, 1, 2)
 
         self.mappersButton = QPushButton(self.configFrame)
         self.mappersButton.setObjectName(u"mappersButton")
@@ -69,24 +75,24 @@ class Ui_MainMenu(object):
 
         self.gridLayout_2.addWidget(self.mappersButton, 1, 1, 1, 1)
 
-        self.activeProfileFrame = QFrame(self.configFrame)
-        self.activeProfileFrame.setObjectName(u"activeProfileFrame")
+        self.loginFrame = QFrame(self.configFrame)
+        self.loginFrame.setObjectName(u"loginFrame")
         sizePolicy2 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
         sizePolicy2.setHorizontalStretch(0)
         sizePolicy2.setVerticalStretch(0)
-        sizePolicy2.setHeightForWidth(self.activeProfileFrame.sizePolicy().hasHeightForWidth())
-        self.activeProfileFrame.setSizePolicy(sizePolicy2)
-        self.activeProfileFrame.setFrameShape(QFrame.Shape.StyledPanel)
-        self.activeProfileFrame.setFrameShadow(QFrame.Shadow.Raised)
-        self.horizontalLayout = QHBoxLayout(self.activeProfileFrame)
+        sizePolicy2.setHeightForWidth(self.loginFrame.sizePolicy().hasHeightForWidth())
+        self.loginFrame.setSizePolicy(sizePolicy2)
+        self.loginFrame.setFrameShape(QFrame.Shape.StyledPanel)
+        self.loginFrame.setFrameShadow(QFrame.Shadow.Raised)
+        self.horizontalLayout = QHBoxLayout(self.loginFrame)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.horizontalLayout.setContentsMargins(-1, 9, -1, 9)
-        self.currentUserLabel = QLabel(self.activeProfileFrame)
-        self.currentUserLabel.setObjectName(u"currentUserLabel")
+        self.loggedAsLabel = QLabel(self.loginFrame)
+        self.loggedAsLabel.setObjectName(u"loggedAsLabel")
 
-        self.horizontalLayout.addWidget(self.currentUserLabel)
+        self.horizontalLayout.addWidget(self.loggedAsLabel)
 
-        self.currentUsernameLabel = QLabel(self.activeProfileFrame)
+        self.currentUsernameLabel = QLabel(self.loginFrame)
         self.currentUsernameLabel.setObjectName(u"currentUsernameLabel")
 
         self.horizontalLayout.addWidget(self.currentUsernameLabel)
@@ -96,7 +102,7 @@ class Ui_MainMenu(object):
         self.horizontalLayout.addItem(self.horizontalSpacer)
 
 
-        self.gridLayout_2.addWidget(self.activeProfileFrame, 0, 0, 1, 2)
+        self.gridLayout_2.addWidget(self.loginFrame, 0, 0, 1, 2)
 
 
         self.gridLayout_3.addWidget(self.configFrame, 0, 0, 1, 1)
@@ -187,12 +193,20 @@ class Ui_MainMenu(object):
     # setupUi
 
     def retranslateUi(self, MainMenu):
-        MainMenu.setWindowTitle(QCoreApplication.translate("MainMenu", u"Quickport", None))
+        MainMenu.setWindowTitle(QCoreApplication.translate("MainMenu", u"SF Price List Importer", None))
         self.actionShowInfo.setText(QCoreApplication.translate("MainMenu", u"Show Info", None))
         self.actionLanguage.setText(QCoreApplication.translate("MainMenu", u"Language", None))
-        self.profilesButton.setText(QCoreApplication.translate("MainMenu", u"Profiles", None))
+        self.loginButton.setText(QCoreApplication.translate("MainMenu", u"Login", None))
+        self.logToSandbox.setText(QCoreApplication.translate("MainMenu", u"Log to Sandbox", None))
+        self.logToSandbox.setToolTip(
+            QCoreApplication.translate(
+                "MainMenu",
+                u"If checked, the application will log into Salesforce Sandbox environment instead of Production.",
+                None
+            )
+        )
         self.mappersButton.setText(QCoreApplication.translate("MainMenu", u"Mappers", None))
-        self.currentUserLabel.setText(QCoreApplication.translate("MainMenu", u"Profile: ", None))
+        self.loggedAsLabel.setText(QCoreApplication.translate("MainMenu", u"Logged as:", None))
         self.currentUsernameLabel.setText(QCoreApplication.translate("MainMenu", u"-none-", None))
         self.exportPricebookGroupBox.setTitle(QCoreApplication.translate("MainMenu", u"Export Data", None))
         self.selectMapperLabel.setText(QCoreApplication.translate("MainMenu", u"Select mapper:", None))

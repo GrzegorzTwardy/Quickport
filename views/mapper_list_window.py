@@ -32,7 +32,7 @@ class MapperListWindow(QWidget):
         self.selected_mapper_idx = 0
         
         self._connect_signals()
-        self.loadMappers()
+        self.load_mappers()
         
     
     def _connect_signals(self):
@@ -50,14 +50,18 @@ class MapperListWindow(QWidget):
             self.current_mapper_path = item.data(Qt.UserRole)
             
         
-    def loadMappers(self):
+    def load_mappers(self):
         self.ui.mapperList.clear()
         
         for json_file in self.PATH_TO_MAPPERS.glob('*.json'):
+            with open(json_file, 'r', encoding='utf-8') as mapper_file:
+                mapper = json.load(mapper_file)
+
             mapper_name = json_file.stem
             mapper_item = QListWidgetItem(mapper_name)
             mapper_item.setData(Qt.UserRole, json_file)
             self.ui.mapperList.addItem(mapper_item)
+                    
         if self.ui.mapperList.count() > 0:
             try:
                 self.ui.mapperList.setCurrentRow(self.selected_mapper_idx)
@@ -70,7 +74,7 @@ class MapperListWindow(QWidget):
     def add_new_mapper(self): # singleton
         if self.editor_new is None:
             self.editor_new = MapperEditorWindow(self.session, None)
-            self.editor_new.refresh_mapper_list.connect(self.loadMappers)
+            self.editor_new.refresh_mapper_list.connect(self.load_mappers)
             self.editor_new.destroyed.connect(lambda: setattr(self, 'editor_new', None))
             self.editor_new.show()
         else:
@@ -98,7 +102,7 @@ class MapperListWindow(QWidget):
             return
 
         new_window = MapperEditorWindow(self.session, target_path)
-        new_window.refresh_mapper_list.connect(self.loadMappers)
+        new_window.refresh_mapper_list.connect(self.load_mappers)
         
         self.opened_editors[target_path] = new_window
         
@@ -136,7 +140,7 @@ class MapperListWindow(QWidget):
                 self.ui.editButton.setEnabled(False)
                 self.ui.deleteButton.setEnabled(False)
                 
-            self.loadMappers()
+            self.load_mappers()
                 
         
 if __name__ == "__main__":

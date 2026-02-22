@@ -62,13 +62,16 @@ class MapperEditorWindow(QWidget):
     def _connect_signals(self):
         self.ui.choose_file_button.clicked.connect(self.open_file_dialog)
         self.ui.save_mapper_button.clicked.connect(self.save_mapper)
-        self.ui.cancel_editing_button.clicked.connect(self.close_mapper)
+        self.ui.cancel_editing_button.clicked.connect(self.close)
     
     
-    def close_mapper(self):
+    def closeEvent(self, event):
         msg = 'Do you want to close the editor without saving?'
+        
         if confirm_warning_result('Closing Mapper Editor', msg):
-            self.close()
+            event.accept()
+        else:
+            event.ignore()
     
     
     def open_file_dialog(self):
@@ -254,12 +257,10 @@ class MapperEditorWindow(QWidget):
     
     # ==== SAVING MAPPER ======
     def save_mapper(self):
-        # TODO: add mapper name to user data
         try:
             # collecting data
             mapper_name = self.ui.mapper_name_line_edit.text()
             mapper_name = mapper_name
-            owner_id = self.session.user_id
             
             sheet_rules: list[SheetRule] = []
             
@@ -271,7 +272,6 @@ class MapperEditorWindow(QWidget):
             # creating to mapper
             mapper = MapperModel(
                 name=mapper_name,
-                owner_id=owner_id,
                 sheet_rules=sheet_rules
             )
             

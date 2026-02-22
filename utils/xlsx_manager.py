@@ -1,6 +1,7 @@
 import pandas as pd
 from pathlib import Path
 from PySide6 import QtCore
+from datetime import datetime
 
 
 def get_sheets_from_file(xlsx_path: Path | str) -> dict[str, pd.DataFrame]:
@@ -27,6 +28,14 @@ def process_sheet(df: pd.DataFrame) -> pd.DataFrame:
     df = df.iloc[1:].reset_index(drop=True)
 
     return df
+
+
+def dict_to_xlsx(obj: dict | list, file_path: str, use_date: bool = False):
+    if use_date:
+        current_time = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
+        file_path = file_path + str(current_time)
+    df = pd.DataFrame(obj)
+    df.to_excel(file_path, index=False)
 
     
 if __name__ == "__main__":

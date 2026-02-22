@@ -12,9 +12,9 @@ from dtos.session import AppSession
 from exceptions.mapper_exceptions import *
 from exceptions.global_exceptions import *
 
-# transformacja danych na dane zgodne z obiektami Product2 i PricebookEntry w Salesforce
-# WAŻNE: zakładamy, że pole ProductCode jest wymaganym i unikalnym polem obiektu w Salesforce
-# i na jego podstawie działają poniższe funkcje - brak tego pola skutuje błędem
+# Transformates data in a way that it is compatible with the Product2 and PricebookEntry objects in Salesforce
+# IMPORTANT: We assume that the ProductCode is a required and unique field of the object in Salesforce
+# and the following functions operate based on it - the absence of this field results in an error
 
 class MapperEngine:
 
@@ -32,10 +32,6 @@ class MapperEngine:
 
         self.execution_errors = [] # Format: [{'Source': str, 'Message': str, 'Details': str}]
         
-        # for map_and_save()
-        self.pricebook_name = Path(pricebook_path).stem
-        self.mapper_name = Path(mapper_path).stem
-
 
     # .csv ==> Product2 df and PricebookEntry df
     def map_data(self) -> tuple[pd.DataFrame, pd.DataFrame]:
@@ -83,7 +79,7 @@ class MapperEngine:
         prod2_df = pd.concat(prod2_frames) # ready prod2 data
         entries_df = pd.concat(entries_df_frames)   
         
-        return prod2_df, entries_df 
+        return prod2_df, entries_df
 
                 
     def map_sheet(

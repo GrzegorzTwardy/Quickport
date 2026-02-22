@@ -1,45 +1,36 @@
 import json
-from dataclasses import dataclass, field
-from utils.security import salt
-from utils.creds_model import Credentials
+from dataclasses import dataclass
 
 
 @dataclass
 class Profile:
     
-    uname: str
-    password: str
-    security_token: str
-    consumer_key: str
-    consumer_secret: str
+    profile_name: str
     instance_url: str
-    # parsers: list
-    # desc: str
-    # salt: str = field(default_factory=lambda: salt(10))
+    consumer_key: str
+    mappers: list
+    desc: str
+    
      
     @classmethod
     def from_json(cls, file_path):
         with open(file_path, 'r', encoding='utf-8') as file:
             pr = json.load(file)
+
         return cls(
-            uname=pr['username'],
-            password=pr['password'],
-            security_token=pr['security_token'],
-            consumer_key=pr['consumer_key'],
-            consumer_secret=pr['consumer_secret'],
-            instance_url=pr['instance_url']
+            profile_name=pr.get('profile_name'),
+            instance_url=pr.get('instance_url'),
+            consumer_key=pr.get('consumer_key'),
+            mappers=pr.get('mappers', []),
+            desc=pr.get('desc', "")
         )
         
 
     def get(self):
         return {
-            'uname': self.uname,
-            'login': self.login,
-            'parssword': self.password,
-            'salt': self.salt,
-            'token': self.token,
-            'api_key': self.api_key,
+            'profile_name': self.profile_name,
             'instance_url': self.instance_url,
-            'parsers': self.parsers,
+            'consumer_key': self.consumer_key,
+            'mappers': self.mappers,
             'desc': self.desc
         }

@@ -43,7 +43,6 @@ class SheetRule:
 @dataclass
 class MapperModel:
     
-    owner_id: str
     sheet_rules: list[SheetRule]
     id: str = field(default_factory=lambda: str(uuid4()), init=False)
     name: str | None = None
@@ -60,7 +59,6 @@ class MapperModel:
     @classmethod
     def from_dict(cls, data: dict) -> "MapperModel":
         return cls(
-            owner_id=data["owner_id"],
             sheet_rules=[
                 SheetRule(
                     sheet_name=sr["sheet_name"],
@@ -88,7 +86,6 @@ class MapperModel:
 
 if __name__ == "__main__":
     model = MapperModel(
-        owner_id="user_123",
         sheet_rules=[]
     )
     print(model)
