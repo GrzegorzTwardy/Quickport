@@ -1,36 +1,31 @@
-import json
-from dataclasses import dataclass
+from uuid import uuid4
+from dataclasses import dataclass, field, asdict
 
 
 @dataclass
 class Profile:
-    
-    profile_name: str
-    instance_url: str
-    consumer_key: str
-    mappers: list
+
+    uid: str = field(default_factory=lambda: str(uuid4()), init=False)
+    name: str
+    production_client_id: str | None
+    sandbox_client_id: str | None
+    mappers: list[str] # list of paths to mappers
     desc: str
+
+
+    def to_dict(self):
+        return asdict(self)
     
-     
+    
     @classmethod
-    def from_json(cls, file_path):
-        with open(file_path, 'r', encoding='utf-8') as file:
-            pr = json.load(file)
-
-        return cls(
-            profile_name=pr.get('profile_name'),
-            instance_url=pr.get('instance_url'),
-            consumer_key=pr.get('consumer_key'),
-            mappers=pr.get('mappers', []),
-            desc=pr.get('desc', "")
+    def from_dict(cls, data: dict) -> 'Profile':
+        obj = cls(
+            name=data.get('name'),
+            production_client_id=data.get('production_client_id'),
+            sandbox_client_id=data.get('sandbox_client_id'),
+            mappers=data.get('mappers'),
+            desc=data.get('desc', ''),
         )
-        
-
-    def get(self):
-        return {
-            'profile_name': self.profile_name,
-            'instance_url': self.instance_url,
-            'consumer_key': self.consumer_key,
-            'mappers': self.mappers,
-            'desc': self.desc
-        }
+        if 'uid' in data and data['uid'] is not None:
+            obj.uid = data['uid']
+        return obj

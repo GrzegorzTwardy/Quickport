@@ -144,26 +144,4 @@ class MapperListWindow(QWidget):
                 
         
 if __name__ == "__main__":
-    import sys
-    from PySide6.QtWidgets import QApplication
-    from dtos.session import AppSession
-    from core.profile.profile_model import Profile
-    from salesforce_api.salesforce_api import SalesforceApi
-
-    profile = Profile.from_json('./cert/test_creds.json')    
-    sf_api = SalesforceApi(profile)
-    sf_api.connect()
-    
-    app = QApplication(sys.argv)
-    
-    session = AppSession()
-    # session.test_login()
-    session.login(
-        user_id='123213', 
-        sf_metadata=sf_api.get_user_sf_metadata()
-    )
-
-    window = MapperListWindow(session)
-    window.show()
-
-    sys.exit(app.exec())
+    pass

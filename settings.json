@@ -1,22 +1,30 @@
 {
-    "environments": [
+    "profiles": [
         {
-            "id": "1",
-            "name": "Firma A - Produkcja",
-            "client_id": "3MVG9_FirmaA_Klucz...",
-            "is_sandbox": false
+            "uid": "1111-2222",
+            "name": "Projekt ABC",
+            "production_client_id": "3MVG9_ProdKlucz...",
+            "sandbox_client_id": "3MVG9_SandboxKlucz...",
+            "mappers": [
+                "mapper1.json"
+            ],
+            "desc": ""
         },
         {
-            "id": "2",
-            "name": "Firma A - Testy UAT",
-            "client_id": "3MVG9_FirmaA_Klucz...",
-            "is_sandbox": true
+            "uid": "3333-4444",
+            "name": "Wewn\u0119trzny Org Dev",
+            "production_client_id": "3MVG9_DevKlucz...",
+            "sandbox_client_id": "",
+            "mappers": [],
+            "desc": ""
         },
         {
-            "id": "3",
-            "name": "Zewnętrzny Klient B",
-            "client_id": "3MVG9_KlientB_Klucz...",
-            "is_sandbox": false
+            "uid": "44ef8035-ca14-41f5-b64a-880e3cf5eee8",
+            "name": "Test Trailblaze Playground",
+            "production_client_id": "3MVG9YFqzc_KnL.zP4xDXrq_EmgXWyf0hdCUgCi1fEcFg.GDfYOIC__TDQmQIRDjOMay96.sWNCCKkiq2ECIJ",
+            "sandbox_client_id": "",
+            "mappers": [],
+            "desc": "test environment"
         }
     ]
 }
