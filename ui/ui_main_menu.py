@@ -46,24 +46,18 @@ class Ui_MainMenu(object):
         self.configFrame.setFrameShadow(QFrame.Shadow.Raised)
         self.gridLayout_2 = QGridLayout(self.configFrame)
         self.gridLayout_2.setObjectName(u"gridLayout_2")
-        self.loginButton = QPushButton(self.configFrame)
-        self.loginButton.setObjectName(u"loginButton")
+        self.profilesButton = QPushButton(self.configFrame)
+        self.profilesButton.setObjectName(u"profilesButton")
         sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Fixed)
         sizePolicy1.setHorizontalStretch(0)
         sizePolicy1.setVerticalStretch(0)
-        sizePolicy1.setHeightForWidth(self.loginButton.sizePolicy().hasHeightForWidth())
-        self.loginButton.setSizePolicy(sizePolicy1)
-        self.loginButton.setMinimumSize(QSize(81, 25))
-        self.loginButton.setMaximumSize(QSize(16777215, 16777215))
-        self.loginButton.setFlat(False)
+        sizePolicy1.setHeightForWidth(self.profilesButton.sizePolicy().hasHeightForWidth())
+        self.profilesButton.setSizePolicy(sizePolicy1)
+        self.profilesButton.setMinimumSize(QSize(81, 25))
+        self.profilesButton.setMaximumSize(QSize(16777215, 16777215))
+        self.profilesButton.setFlat(False)
 
-        self.gridLayout_2.addWidget(self.loginButton, 1, 0, 1, 1)
-        
-        self.logToSandbox = QCheckBox(self.configFrame)
-        self.logToSandbox.setObjectName(u"logToSandbox")
-        self.logToSandbox.setChecked(False)
-
-        self.gridLayout_2.addWidget(self.logToSandbox, 2, 0, 1, 2)
+        self.gridLayout_2.addWidget(self.profilesButton, 1, 0, 1, 1)
 
         self.mappersButton = QPushButton(self.configFrame)
         self.mappersButton.setObjectName(u"mappersButton")
@@ -196,15 +190,7 @@ class Ui_MainMenu(object):
         MainMenu.setWindowTitle(QCoreApplication.translate("MainMenu", u"SF Price List Importer", None))
         self.actionShowInfo.setText(QCoreApplication.translate("MainMenu", u"Show Info", None))
         self.actionLanguage.setText(QCoreApplication.translate("MainMenu", u"Language", None))
-        self.loginButton.setText(QCoreApplication.translate("MainMenu", u"Login", None))
-        self.logToSandbox.setText(QCoreApplication.translate("MainMenu", u"Log to Sandbox", None))
-        self.logToSandbox.setToolTip(
-            QCoreApplication.translate(
-                "MainMenu",
-                u"If checked, the application will log into Salesforce Sandbox environment instead of Production.",
-                None
-            )
-        )
+        self.profilesButton.setText(QCoreApplication.translate("MainMenu", u"Profiles", None))
         self.mappersButton.setText(QCoreApplication.translate("MainMenu", u"Mappers", None))
         self.loggedAsLabel.setText(QCoreApplication.translate("MainMenu", u"Logged as:", None))
         self.currentUsernameLabel.setText(QCoreApplication.translate("MainMenu", u"-none-", None))
