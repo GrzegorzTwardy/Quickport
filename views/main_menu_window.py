@@ -1,6 +1,7 @@
 import json
 from pathlib import Path
 from dtos.session import AppSession
+from dtos.sf_metadata import SfMetadata
 from PySide6.QtWidgets import (QMainWindow, QListWidgetItem, QFileDialog, QMessageBox)
 from PySide6.QtCore import Qt
 
@@ -18,6 +19,9 @@ from views.mapper_list_window import MapperListWindow
 class MainMenuWindow(QMainWindow):
     
     PATH_TO_MAPPERS = Path('./mappers/')
+    CLIENT_ID = '3MVG9YFqzc_KnL.zP4xDXrq_EmgXWyf0hdCUgCi1fEcFg.GDfYOIC__TDQmQIRDjOMay96.sWNCCKkiq2ECIJ'
+    # CLIENT_ID = '3MVG9YFqzc_KnL.zxPe.IGRlPbs_tOBWClS08_uAIV7Jvp8DpFZvnUgGeys2v_Mu.PN3Cr51zohuqk2cBSmRR'
+    # cliend id = consumer key
     
     def __init__(self):
         super().__init__()
@@ -64,6 +68,26 @@ class MainMenuWindow(QMainWindow):
         
     
     def handle_login_success(self, token_response):
+        
+        def validate_metadata(sf_metadata: SfMetadata):
+            errors_msgs = []
+
+            if len(sf_metadata.available_currencies) == 0:
+                errors_msgs.append('avaliable currencies')
+            if len(sf_metadata.pricebooks) == 0:
+                errors_msgs.append('pricebooks')
+            if len(sf_metadata.product2_fields) == 0:
+                errors_msgs.append('Product2 fields')
+            elif 'ProductCode' not in sf_metadata.product2_fields:
+                errors_msgs.append("'ProductCode' field in Product2 object (obligatory field)")
+                
+            if errors_msgs:
+                msg = 'This account does not have/is missing required data:\n'
+                for m in errors_msgs:
+                    msg += f"- {m}\n"
+                
+                raise ValueError(msg.rstrip())
+        
         try:
             self.full_name = Authenticator.get_user_display_name(
                 identity_url=token_response['id'], 
@@ -73,12 +97,16 @@ class MainMenuWindow(QMainWindow):
             creds = Credentials(
                 access_token=token_response['access_token'],
                 refresh_token=token_response.get('refresh_token'),
-                instance_url=token_response['instance_url']
+                instance_url=token_response['instance_url'],
+                client_id=self.CLIENT_ID
             )
 
             self.sf_api = SalesforceApi(creds=creds)
 
             sf_metadata = self.sf_api.get_user_sf_metadata()
+            
+            # validate user's Salesforce info
+            validate_metadata(sf_metadata)
 
             self.session.login(sf_metadata)
             
@@ -115,7 +143,7 @@ class MainMenuWindow(QMainWindow):
         
         # using "self." so it doesn't end up in the garbage collector
         self.auth_thread = Authenticator(
-            client_id="3MVG9YFqzc_KnL.zP4xDXrq_EmgXWyf0hdCUgCi1fEcFg.GDfYOIC__TDQmQIRDjOMay96.sWNCCKkiq2ECIJ",
+            client_id=self.CLIENT_ID,
             login_url=login_url
         )
         

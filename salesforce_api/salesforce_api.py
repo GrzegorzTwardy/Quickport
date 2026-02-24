@@ -1,79 +1,37 @@
-# import io
-# import time
-# import logging
-# import requests
-# import pandas as pd
-# from pathlib import Path
-# from dtos.session import AppSession
-# from dtos.sf_metadata import SfMetadata
-# from core.profile.profile_model import Profile
-# from simple_salesforce import Salesforce
-# from exceptions.sf_api_exceptions import *
-
-# class SalesforceApi:
-    
-#     def __init__(self, profile: Profile):
-#         self.sf = None
-#         self.username = profile.uname
-#         self.password = profile.password
-#         self.security_token = profile.security_token
-#         self.consumer_key = profile.consumer_key
-#         self.consumer_secret = profile.consumer_secret
-#         self.instance_url = profile.instance_url
-
-#         logging.basicConfig(
-#             level=logging.INFO,
-#             format='%(asctime)s | %(levelname)s | %(message)s'
-#         )
-#         self.logger = logging.getLogger(__name__)
-
-#         self.standard_pricebook_dict = {} 
-#         self.custom_pricebooks_dict = {} 
-        
-#         self.execution_errors = [] # [{'Source': str, 'Message': str, 'Details': str}]
-        
-#         self.connect()
-#         self.load_all_pricebooks()
-
-
-#     def connect(self) -> Salesforce:
-#         url = f'{self.instance_url}/services/oauth2/token'
-#         data = {
-#             'grant_type': 'password',
-#             'client_id': self.consumer_key,
-#             'client_secret': self.consumer_secret,
-#             'username': self.username,
-#             'password': f'{self.password}{self.security_token}',
-#         }
-
-#         try:
-#             response = requests.post(url, data=data, timeout=15)
-#             response.raise_for_status()
-#             payload = response.json()
-
-#             if 'access_token' not in payload or 'instance_url' not in payload:
-#                 raise ValueError(f'Invalid OAuth response: {payload}')
-
-#             self.sf = Salesforce(instance_url=payload['instance_url'], session_id=payload['access_token'])
-#             self.logger.info('Connection with Salesforce established.')
-            
-#         except Exception as e:
-#             self.logger.error(f'Connection failed: {e}')
-#             self._register_error("Connection", str(e))
-#             raise
-
-
 import io
 import time
 import logging
 import requests
 import pandas as pd
 from pathlib import Path
+from functools import wraps
 from dtos.session import AppSession
 from dtos.sf_metadata import SfMetadata
 from dtos.credentials import Credentials
 from simple_salesforce import Salesforce
+from simple_salesforce.exceptions import SalesforceExpiredSession
 from exceptions.sf_api_exceptions import *
+
+
+def auto_refresh_token(func):
+    @wraps(func)
+    def wrapper(self, *args, **kwargs):
+        try:
+            return func(self, *args, **kwargs)
+        
+        except SalesforceExpiredSession:
+            self.logger.warning(f"Session expried while invoking '{func.__name__}'. Refreshing tokens...")
+            self._refresh_access_token()
+            
+            self.sf = Salesforce(
+                instance_url=self.instance_url, 
+                session_id=self.access_token
+            )
+            
+            self.logger.info("Retrying request...")
+            return func(self, *args, **kwargs)
+    
+    return wrapper
 
 
 class SalesforceApi:
@@ -84,6 +42,7 @@ class SalesforceApi:
         self.access_token = creds.access_token
         self.refresh_token = creds.refresh_token
         self.instance_url = creds.instance_url
+        self.client_id = creds.client_id
 
         logging.basicConfig(
             level=logging.INFO,
@@ -96,9 +55,10 @@ class SalesforceApi:
         self.execution_errors = [] 
         
         self.connect()
-        self.load_all_pricebooks()
+        # self.load_all_pricebooks()
         
 
+    @auto_refresh_token
     def connect(self) -> Salesforce:
         """
         Inicjalizuje połączenie za pomocą istniejącego Access Tokena.
@@ -114,18 +74,11 @@ class SalesforceApi:
             
             # Szybki test połączenia - rzuci błędem jeśli access_token wygasł
             self.sf.limits()
-            self.logger.info('Połączenie z Salesforce ustanowione (Access Token aktywny).')
-            
+            self.logger.info('Połączenie z Salesforce ustanowione (Access Token aktywny).')   
         except Exception as e:
-            self.logger.warning(f'Access token prawdopodobnie wygasł. Próba odświeżenia... Błąd: {e}')
-            self._refresh_access_token()
-            # Rekursywne połączenie po odświeżeniu
-            self.sf = Salesforce(
-                instance_url=self.instance_url, 
-                session_id=self.access_token
-            )
-            self.logger.info('Połączenie ustanowione po odświeżeniu tokena.')
+            self.logger.error(e)
 
+    
     def _refresh_access_token(self):
         """Odświeża Access Token używając Refresh Tokena."""
         if not self.refresh_token:
@@ -154,16 +107,19 @@ class SalesforceApi:
 
 
     # === Metadata Helpers === 
+    @auto_refresh_token
     def get_prod2_fields(self):
         desc = self.sf.Product2.describe()
         return [f['name'] for f in desc['fields'] if f['name'] != 'Id']
     
     
+    @auto_refresh_token
     def get_pb_entry_fields(self):
         desc = self.sf.PricebookEntry.describe()
         return [f['name'] for f in desc['fields'] if f['name'] != 'Id']
     
     
+    @auto_refresh_token
     def load_all_pricebooks(self):
         try:
             custom_records = self.sf.query_all("SELECT Id, Name FROM Pricebook2 WHERE IsActive = true AND IsStandard = false ORDER BY Name ASC") 
@@ -176,6 +132,7 @@ class SalesforceApi:
             self._register_error("Metadata", f"Failed to load pricebooks: {e}")
 
 
+    @auto_refresh_token
     def get_available_currencies(self):
         try:
             result = self.sf.query("SELECT IsoCode FROM CurrencyType WHERE IsActive = true")
@@ -184,6 +141,7 @@ class SalesforceApi:
             return []
 
 
+    @auto_refresh_token
     def get_mappable_object_fields(self, object_name: str) -> dict[str, dict]:
         desc = getattr(self.sf, object_name).describe()
         result: dict[str, dict] = {}
@@ -200,6 +158,7 @@ class SalesforceApi:
             }
         return result
     
+    @auto_refresh_token
     def get_user_sf_metadata(self) -> SfMetadata:   
         return SfMetadata(
             product2_fields=self.get_mappable_object_fields('Product2'),
@@ -233,11 +192,13 @@ class SalesforceApi:
             self.logger.error(f"Failed to parse error CSV: {e}")
 
 
+    @auto_refresh_token
     def _get_product_id_map(self) -> dict:
         res = self.sf.query_all("SELECT Id, ProductCode FROM Product2")
         return {row['ProductCode']: row['Id'] for row in res['records'] if row['ProductCode']}
 
 
+    @auto_refresh_token
     def _get_existing_pbe_map(self) -> dict:
         self.logger.info("Fetching existing PricebookEntries...")
         query = "SELECT Id, Product2Id, Pricebook2Id, CurrencyIsoCode FROM PricebookEntry"
@@ -250,6 +211,7 @@ class SalesforceApi:
 
 
     # === Bulk Jobs ===
+    @auto_refresh_token
     def _execute_bulk_v2(self, df: pd.DataFrame, object_name: str, operation: str, poll_interval: int = 2):
         csv_buffer = io.StringIO()
         df.to_csv(csv_buffer, index=False, lineterminator='\n')
@@ -306,6 +268,7 @@ class SalesforceApi:
     # === LOAD METHODS ===
 
     # == Product2 ===
+    @auto_refresh_token
     def load_product2(self, data: pd.DataFrame | str | Path, operation: str = 'upsert', poll_interval: int = 2):
         self.logger.info("Start loading Product2...")
         # self.execution_errors = [] 
@@ -343,6 +306,7 @@ class SalesforceApi:
         return results
 
     # == PricebookEntry ===
+    @auto_refresh_token
     def load_pricebook_entry(self, data: pd.DataFrame | str | Path, poll_interval: int = 2):
         self.logger.info("Start synchronizing PricebookEntries...")
         

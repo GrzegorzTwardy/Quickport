@@ -1,0 +1,22 @@
+{
+    "environments": [
+        {
+            "id": "1",
+            "name": "Firma A - Produkcja",
+            "client_id": "3MVG9_FirmaA_Klucz...",
+            "is_sandbox": false
+        },
+        {
+            "id": "2",
+            "name": "Firma A - Testy UAT",
+            "client_id": "3MVG9_FirmaA_Klucz...",
+            "is_sandbox": true
+        },
+        {
+            "id": "3",
+            "name": "Zewnętrzny Klient B",
+            "client_id": "3MVG9_KlientB_Klucz...",
+            "is_sandbox": false
+        }
+    ]
+}

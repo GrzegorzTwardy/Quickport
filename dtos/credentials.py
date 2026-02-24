@@ -5,3 +5,4 @@ class Credentials:
     access_token: str
     instance_url: str
     refresh_token: str = None
+    client_id: str = None
