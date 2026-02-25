@@ -1,5 +1,5 @@
 {
-    "owner_id": "12321",
+    "owner_id": "123213",
     "sheet_rules": [
         {
             "sheet_name": "renewals",
@@ -11,7 +11,7 @@
                 "Category",
                 "UPC",
                 "SKU",
-                "MSRP",
+                "Price",
                 "Method of Delivery",
                 "Dimensions of \nunit in box\n(inches)",
                 "Weight of \nunit in box (LBS)",
@@ -24,13 +24,13 @@
                     "currencies": [
                         {
                             "code": "EUR",
-                            "source_column": "MSRP",
-                            "conversion_factor": 4.0
+                            "source_column": "Price",
+                            "conversion_factor": 1.0
                         },
                         {
                             "code": "PLN",
-                            "source_column": "MSRP",
-                            "conversion_factor": 5.0
+                            "source_column": "Price",
+                            "conversion_factor": 4.0
                         }
                     ]
                 }
@@ -150,7 +150,7 @@
                     "allows_nulls": false,
                     "args": {
                         "conversion_factor": 4.0,
-                        "source_column": "MSRP"
+                        "source_column": "Price"
                     }
                 },
                 {
@@ -188,6 +188,6 @@
             ]
         }
     ],
-    "id": "b95a41db-4bcc-44ae-a1ce-60d8f596c5e7",
-    "name": "old-ab-mapper"
+    "id": "8264ad64-19fe-4aa7-bc86-a5409ee6d296",
+    "name": "diff-xlsx-mapper"
 }

@@ -55,7 +55,7 @@ class SalesforceApi:
         self.execution_errors = [] 
         
         self.connect()
-        # self.load_all_pricebooks()
+        self.load_all_pricebooks()
         
 
     @auto_refresh_token

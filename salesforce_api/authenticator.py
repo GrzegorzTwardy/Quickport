@@ -15,12 +15,12 @@ class Authenticator(QThread):
     login_successful = Signal(dict)
     login_failed = Signal(str)
 
-    def __init__(self, client_id, port=8080, login_url="https://login.salesforce.com"):
+    def __init__(self, client_id, port=8080, login_url='https://login.salesforce.com'):
         super().__init__()
         self.client_id = client_id
         self.port = port
         self.login_url = login_url
-        self.redirect_uri = f"http://localhost:{self.port}/callback"
+        self.redirect_uri = f'http://localhost:{self.port}/callback'
         self.auth_code = None
         
         self._is_cancelled = False
@@ -44,15 +44,17 @@ class Authenticator(QThread):
         try:
             verifier, challenge = self._generate_pkce()
 
-            auth_url = (f"{self.login_url}/services/oauth2/authorize"
-                        f"?client_id={self.client_id}"
-                        f"&redirect_uri={urllib.parse.quote(self.redirect_uri)}"
-                        f"&response_type=code"
-                        f"&code_challenge={challenge}"
-                        f"&code_challenge_method=S256")
+            auth_url = (f'{self.login_url}/services/oauth2/authorize'
+                        f'?client_id={self.client_id}'
+                        f'&redirect_uri={urllib.parse.quote(self.redirect_uri)}'
+                        f'&response_type=code'
+                        f'&code_challenge={challenge}'
+                        f'&code_challenge_method=S256')
 
             # handler for local server
             outer_self = self
+            outer_self.auth_error = None
+            
             class CallbackHandler(BaseHTTPRequestHandler):
                 
                 def do_GET(self):
@@ -72,10 +74,26 @@ class Authenticator(QThread):
                         </body></html>
                         """
                         self.wfile.write(html.encode('utf-8'))
+                    elif 'error' in params:
+                        error_desc = params.get('error_description', ['Unknown authorization error'])[0]
+                        outer_self.auth_error = error_desc
+                        
+                        self.send_response(400)
+                        self.send_header('Content-type', 'text/html; charset=utf-8')
+                        self.end_headers()
+                        
+                        html = """
+                        <html><body style="font-family: Arial, sans-serif; text-align: center; padding-top: 50px;">
+                            <h2>Returning to the application...</h2>
+                            <p>You can safely close this tab if it doesn't close automatically.</p>
+                            <script>window.close();</script>
+                        </body></html>
+                        """
+                        self.wfile.write(html.encode('utf-8'))
                     else:
                         self.send_response(400)
                         self.end_headers()
-                        self.wfile.write(b"Authorization error or missing code.")
+                        self.wfile.write(b'Authorization error or missing code.')
 
                 def log_message(self, format, *args):
                     pass
@@ -91,19 +109,23 @@ class Authenticator(QThread):
             try:
                 webbrowser.open_new(auth_url)
                 
-                while not self.auth_code and waited < max_wait_seconds and not self._is_cancelled:
+                while not self.auth_code and not self.auth_error and waited < max_wait_seconds and not self._is_cancelled:
                     server.handle_request()
                     waited += 1
             finally:
                 server.server_close()
 
             if self._is_cancelled:
-                raise Exception("Logging has been canceled by the user.")
+                raise Exception('Logging has been canceled by the user.')
+            
+            if self.auth_error:
+                error_msg = urllib.parse.unquote(self.auth_error)
+                raise Exception(f'Salesforce authorization error: {error_msg}')
             
             if not self.auth_code:
-                raise Exception("Could not get authorization code from Salesforce (Timeout).")
+                raise Exception('Could not get authorization code from Salesforce (Timeout).')
             
-            token_url = f"{self.login_url}/services/oauth2/token"
+            token_url = f'{self.login_url}/services/oauth2/token'
             data = {
                 'grant_type': 'authorization_code',
                 'client_id': self.client_id,
@@ -115,7 +137,7 @@ class Authenticator(QThread):
             response = requests.post(token_url, data=data)
             
             if response.status_code != 200:
-                raise ConnectionError(f"An error occured while downloading tokens: {response.text}")
+                raise ConnectionError(f'An error occured while downloading tokens: {response.text}')
 
             tokens = response.json()
             self.login_successful.emit(tokens)
@@ -124,6 +146,7 @@ class Authenticator(QThread):
     
 
     # get user's name and lastname with access token
+    @staticmethod
     def get_user_display_name(identity_url: str, access_token: str) -> str:
         headers = {
             'Authorization': f'Bearer {access_token}',
@@ -141,4 +164,4 @@ class Authenticator(QThread):
             
             return display_name
         else:
-            raise Exception(f"Could not get identity info: {response.text}")
+            raise Exception(f'Could not get identity info: {response.text}')

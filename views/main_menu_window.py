@@ -14,16 +14,12 @@ from utils.xlsx_manager import dict_to_xlsx
 from dtos.credentials import Credentials
 
 from views.mapper_list_window import MapperListWindow
+from views.profile_manager_window import ProfileManagerWindow
 
 
 class MainMenuWindow(QMainWindow):
     
     PATH_TO_MAPPERS = Path('./mappers/')
-    
-    # TODO: przenieść to do view managera profili
-    CLIENT_ID = '3MVG9YFqzc_KnL.zP4xDXrq_EmgXWyf0hdCUgCi1fEcFg.GDfYOIC__TDQmQIRDjOMay96.sWNCCKkiq2ECIJ'
-    # CLIENT_ID = '3MVG9YFqzc_KnL.zxPe.IGRlPbs_tOBWClS08_uAIV7Jvp8DpFZvnUgGeys2v_Mu.PN3Cr51zohuqk2cBSmRR'
-    # client id = consumer key
     
     def __init__(self):
         super().__init__()
@@ -35,6 +31,7 @@ class MainMenuWindow(QMainWindow):
         self.sf_api = None
         
         # views
+        self.profile_manager_window = None
         self.mapper_list_window = None
         
         # mapping config
@@ -56,16 +53,29 @@ class MainMenuWindow(QMainWindow):
     
     
     def open_profile_manager(self):
-        pass
+        if self.profile_manager_window is None:
+            self.profile_manager_window = ProfileManagerWindow(self.session)
+            self.profile_manager_window.setWindowModality(Qt.ApplicationModal)
+            self.profile_manager_window.destroyed.connect(lambda: setattr(self, 'profile_manager_window', None))
+            self.profile_manager_window.show()
+        else:
+            self.profile_manager_window.show()
+            self.profile_manager_window.activateWindow()
     
     
     def on_login(self):
+        if self.profile_manager_window is not None:
+            self.full_name = self.profile_manager_window.full_name
+            self.sf_api = self.profile_manager_window.sf_api
+
         self.ui.exportPricebookGroupBox.setEnabled(True)
         self.ui.mappersButton.setEnabled(True)
-        self.ui.currentUsernameLabel.setText(self.full_name)
+        
+        display_name = self.full_name if self.full_name else '-none-'
+        self.ui.currentUsernameLabel.setText(display_name)
         
         self.load_mappers()
-
+    
     
     def on_logout(self):
         self.ui.exportPricebookGroupBox.setEnabled(False)
@@ -156,89 +166,3 @@ if __name__ == "__main__":
     
     sys.exit(app.exec())
     
-    
-    
-#      def handle_login_success(self, token_response):
-        
-#         def validate_metadata(sf_metadata: SfMetadata):
-#             errors_msgs = []
-
-#             if len(sf_metadata.available_currencies) == 0:
-#                 errors_msgs.append('avaliable currencies')
-#             if len(sf_metadata.pricebooks) == 0:
-#                 errors_msgs.append('pricebooks')
-#             if len(sf_metadata.product2_fields) == 0:
-#                 errors_msgs.append('Product2 fields')
-#             elif 'ProductCode' not in sf_metadata.product2_fields:
-#                 errors_msgs.append("'ProductCode' field in Product2 object (obligatory field)")
-                
-#             if errors_msgs:
-#                 msg = 'This account does not have/is missing required data:\n'
-#                 for m in errors_msgs:
-#                     msg += f"- {m}\n"
-                
-#                 raise ValueError(msg.rstrip())
-        
-#         try:
-#             self.full_name = Authenticator.get_user_display_name(
-#                 identity_url=token_response['id'], 
-#                 access_token=token_response['access_token']
-#             )
-
-#             creds = Credentials(
-#                 access_token=token_response['access_token'],
-#                 refresh_token=token_response.get('refresh_token'),
-#                 instance_url=token_response['instance_url'],
-#                 client_id=self.CLIENT_ID
-#             )
-
-#             self.sf_api = SalesforceApi(creds=creds)
-
-#             sf_metadata = self.sf_api.get_user_sf_metadata()
-            
-#             # validate user's Salesforce info
-#             validate_metadata(sf_metadata)
-
-#             self.session.login(sf_metadata)
-            
-#             self.ui.loginButton.setText('Re-login')
-#             self.ui.loginButton.setEnabled(True)
-            
-#             QMessageBox.information(self, "Success", f"Successfully logged as:\n{self.full_name}")
-#         except Exception as e:
-#             self.handle_login_error(str(e))
-    
-    
-#     def handle_login_error(self, error_message):
-#         self.ui.loginButton.setEnabled(True)
-#         self.ui.loginButton.setText("Login")
-        
-#         if "has been canceled" not in error_message:
-#             QMessageBox.critical(self, "Authorization Error", f"Error:\n{error_message}")
-
-
-#     def login(self):
-#         if hasattr(self, 'auth_thread') and self.auth_thread.isRunning():
-#             self.auth_thread.cancel()
-#             self.ui.loginButton.setEnabled(False)
-#             self.ui.loginButton.setText("Cancelling...")
-#             return
-        
-#         if self.ui.logToSandbox.isChecked():
-#             login_url = "https://test.salesforce.com"
-#         else:
-#             login_url = "https://login.salesforce.com"
-            
-#         self.ui.loginButton.setEnabled(True)
-#         self.ui.loginButton.setText("Cancel")
-        
-#         # using "self." so it doesn't end up in the garbage collector
-#         self.auth_thread = Authenticator(
-#             client_id=self.CLIENT_ID,
-#             login_url=login_url
-#         )
-        
-#         self.auth_thread.login_successful.connect(self.handle_login_success)
-#         self.auth_thread.login_failed.connect(self.handle_login_error)
-
-#         self.auth_thread.start()

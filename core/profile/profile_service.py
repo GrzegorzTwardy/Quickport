@@ -49,7 +49,6 @@ class ProfileService:
         name: str,
         production_client_id: str,
         sandbox_client_id: str | None,
-        mappers: list[MapperModel],
         desc: str
     ):
         # check if name is not already taken
@@ -57,7 +56,7 @@ class ProfileService:
             if profile.name == name:
                 raise ValueError(f"Profile with the name '{name}' already exists.")
         
-        profile = Profile(name, production_client_id, sandbox_client_id, mappers, desc)
+        profile = Profile(name, production_client_id, sandbox_client_id, desc)
         self.profiles.append(profile)
         self.profiles_empty = False
         
@@ -74,13 +73,12 @@ class ProfileService:
         name: str,
         production_client_id: str,
         sandbox_client_id: str | None,
-        mappers: list[MapperModel],
         desc: str
     ):
         target_profile = None
         
         for profile in self.profiles:
-            # if new profile name is aready taken with exception to the profile that is being edited (initially it must have the same name)
+            # if new profile name is already taken with exception to the profile that is being edited (initially it must have the same name)
             if profile.name == name and name != target_profile_name:
                 raise ValueError(f"Profile with the name '{name}' already exists.")
             if profile.name == target_profile_name:
@@ -92,7 +90,6 @@ class ProfileService:
         target_profile.name = name
         target_profile.production_client_id = production_client_id
         target_profile.sandbox_client_id = sandbox_client_id
-        target_profile.mappers = mappers
         target_profile.desc = desc
 
         self._save_to_file()

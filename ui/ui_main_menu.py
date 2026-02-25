@@ -145,7 +145,7 @@ class Ui_MainMenu(object):
         self.exportCsvButton.setEnabled(False)
         sizePolicy1.setHeightForWidth(self.exportCsvButton.sizePolicy().hasHeightForWidth())
         self.exportCsvButton.setSizePolicy(sizePolicy1)
-        self.exportCsvButton.setMinimumSize(QSize(81, 21))
+        self.exportCsvButton.setMinimumSize(QSize(81, 26))
         self.exportCsvButton.setMaximumSize(QSize(16777215, 16777215))
 
         self.gridLayout.addWidget(self.exportCsvButton, 3, 1, 1, 1)
@@ -155,7 +155,7 @@ class Ui_MainMenu(object):
         self.loadToSfButton.setEnabled(False)
         sizePolicy1.setHeightForWidth(self.loadToSfButton.sizePolicy().hasHeightForWidth())
         self.loadToSfButton.setSizePolicy(sizePolicy1)
-        self.loadToSfButton.setMinimumSize(QSize(81, 21))
+        self.loadToSfButton.setMinimumSize(QSize(81, 26))
         self.loadToSfButton.setMaximumSize(QSize(16777215, 16777215))
 
         self.gridLayout.addWidget(self.loadToSfButton, 4, 1, 1, 1)
