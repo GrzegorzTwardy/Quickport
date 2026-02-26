@@ -60,19 +60,11 @@ class SalesforceApi:
 
     @auto_refresh_token
     def connect(self) -> Salesforce:
-        """
-        Inicjalizuje połączenie za pomocą istniejącego Access Tokena.
-        Jeśli token wygasł, próbuje go odświeżyć za pomocą Refresh Tokena.
-        """
         try:
-            # simple_salesforce nie weryfikuje tokena w momencie inicjalizacji,
-            # dlatego robimy szybki test (np. pobranie limitów)
             self.sf = Salesforce(
                 instance_url=self.instance_url, 
                 session_id=self.access_token
             )
-            
-            # Szybki test połączenia - rzuci błędem jeśli access_token wygasł
             self.sf.limits()
             self.logger.info('Połączenie z Salesforce ustanowione (Access Token aktywny).')   
         except Exception as e:
@@ -80,11 +72,9 @@ class SalesforceApi:
 
     
     def _refresh_access_token(self):
-        """Odświeża Access Token używając Refresh Tokena."""
         if not self.refresh_token:
             raise ValueError("Brak Refresh Tokena. Użytkownik musi zalogować się ponownie.")
 
-        # Ustalenie endpointu na podstawie instance_url (lub sztywno login/test.salesforce.com)
         token_url = f'{self.instance_url}/services/oauth2/token'
         
         data = {
@@ -101,7 +91,6 @@ class SalesforceApi:
             
         payload = response.json()
         self.access_token = payload['access_token']
-        # Warto tutaj również zaktualizować obiekt Profile i zapisać nowy token w pliku/bazie!
         
         self.logger.info("Access Token został pomyślnie odświeżony.")
 
@@ -193,15 +182,23 @@ class SalesforceApi:
 
 
     @auto_refresh_token
-    def _get_product_id_map(self) -> dict:
-        res = self.sf.query_all("SELECT Id, ProductCode FROM Product2")
+    def _get_product_id_map(self, skus: list) -> dict:
+        if not skus: return {}
+        sku_strings = "'" + "','".join([str(s).replace("'", "\\'") for s in skus]) + "'"
+        query = f"SELECT Id, ProductCode FROM Product2 WHERE ProductCode IN ({sku_strings})"
+        
+        self.logger.info(f"Fetching Product2 mapping for {len(skus)} SKUs...")
+        res = self.sf.query_all(query)
         return {row['ProductCode']: row['Id'] for row in res['records'] if row['ProductCode']}
 
-
     @auto_refresh_token
-    def _get_existing_pbe_map(self) -> dict:
-        self.logger.info("Fetching existing PricebookEntries...")
-        query = "SELECT Id, Product2Id, Pricebook2Id, CurrencyIsoCode FROM PricebookEntry"
+    def _get_existing_pbe_map(self, product_ids: list) -> dict:
+        if not product_ids: return {}
+        
+        self.logger.info(f"Fetching existing PricebookEntries for {len(product_ids)} products...")
+        p_ids_str = "'" + "','".join(product_ids) + "'"
+        query = f"SELECT Id, Product2Id, Pricebook2Id, CurrencyIsoCode FROM PricebookEntry WHERE Product2Id IN ({p_ids_str})"
+        
         res = self.sf.query_all(query)
         mapping = {}
         for row in res['records']:
@@ -286,7 +283,8 @@ class SalesforceApi:
             raise MissingRequiredColumnError("ProductCode is required.")
 
         try:
-            prod_map = self._get_product_id_map()
+            skus_in_file = df['ProductCode'].dropna().unique().tolist()
+            prod_map = self._get_product_id_map(skus_in_file)
         except Exception as e:
             self._register_error("Load Product2", f"Failed to fetch metadata: {e}")
             raise
@@ -319,8 +317,11 @@ class SalesforceApi:
             return {}
 
         try:
-            prod_map = self._get_product_id_map()
-            existing_pbe_map = self._get_existing_pbe_map()
+            skus_in_file = df['ProductCode'].dropna().unique().tolist()
+            prod_map = self._get_product_id_map(skus_in_file)
+            
+            valid_product_ids = list(set([prod_map[sku] for sku in skus_in_file if sku in prod_map]))
+            existing_pbe_map = self._get_existing_pbe_map(valid_product_ids)
         except Exception as e:
             self._register_error("Load Pricebooks", f"Failed to fetch metadata: {e}")
             raise
@@ -339,6 +340,7 @@ class SalesforceApi:
         inserts_std, updates_std = [], []
         inserts_custom, updates_custom = [], []
         queued_std_keys = set()
+        queued_std_update_keys = set()
         
         for _, row in df.iterrows():
             sku = row.get('ProductCode')
@@ -356,10 +358,8 @@ class SalesforceApi:
                 continue
 
             prod_id = prod_map[sku]
-            
             current_comp_key = (prod_id, pb_id, currency)
             
-            # Logic Standard PB
             if std_pb_id and pb_id != std_pb_id:
                 std_comp_key = (prod_id, std_pb_id, currency)
                 if std_comp_key not in existing_pbe_map and std_comp_key not in queued_std_keys:
@@ -371,11 +371,25 @@ class SalesforceApi:
                         "IsActive": True
                     })
                     queued_std_keys.add(std_comp_key)
+                elif std_comp_key in existing_pbe_map and std_comp_key not in queued_std_update_keys:
+                    updates_std.append({
+                        "Id": existing_pbe_map[std_comp_key],
+                        "UnitPrice": price,
+                        "IsActive": is_active
+                    })
+                    queued_std_update_keys.add(std_comp_key)
 
-            record = {
+            # Pełny rekord - przyda się do INSERTU
+            insert_record = {
                 "Pricebook2Id": pb_id,
                 "Product2Id": prod_id,
                 "CurrencyIsoCode": currency,
+                "UnitPrice": price,
+                "IsActive": is_active
+            }
+            
+            # Ograniczony rekord - TYLKO DO UPDATE'U (usunięto zablokowane pola)
+            update_record = {
                 "UnitPrice": price,
                 "IsActive": is_active
             }
@@ -383,48 +397,39 @@ class SalesforceApi:
             is_target_std = (pb_id == std_pb_id)
 
             if current_comp_key in existing_pbe_map:
-                record['Id'] = existing_pbe_map[current_comp_key]
-                if is_target_std: updates_std.append(record)
-                else: updates_custom.append(record)
+                # Jeśli rekord istnieje - dodajemy ID do przygotowanego wcześniej słownika 'update_record'
+                update_record['Id'] = existing_pbe_map[current_comp_key]
+                if is_target_std:
+                    if current_comp_key not in queued_std_update_keys:
+                        updates_std.append(update_record)
+                else: 
+                    updates_custom.append(update_record)
             else:
-                if is_target_std: inserts_std.append(record)
-                else: inserts_custom.append(record)
+                # Jeśli rekord nie istnieje - dodajemy przygotowany wcześniej słownik 'insert_record'
+                if is_target_std:
+                    if current_comp_key not in queued_std_keys:
+                        inserts_std.append(insert_record)
+                else: 
+                    inserts_custom.append(insert_record)
 
-        results = {}
+        # Inicjujemy results żeby uniknąć zwracania pustego słownika przy błędach
+        results = {"success": 0, "failed": 0} 
 
-        if inserts_std:
-            self._execute_bulk_v2(pd.DataFrame(inserts_std), "PricebookEntry", "insert", poll_interval)
-        if updates_std:
-            self._execute_bulk_v2(pd.DataFrame(updates_std), "PricebookEntry", "update", poll_interval)
-        if inserts_custom:
-            self._execute_bulk_v2(pd.DataFrame(inserts_custom), "PricebookEntry", "insert", poll_interval)
-        if updates_custom:
-            self._execute_bulk_v2(pd.DataFrame(updates_custom), "PricebookEntry", "update", poll_interval)
+        # === Zapis do Salesforce ===
+        # Zbiorcze wywoływanie dla estetyki logowania i uproszczenia
+        def execute_job(data_list, obj_name, op_type):
+            if not data_list: return
+            res = self._execute_bulk_v2(pd.DataFrame(data_list), obj_name, op_type, poll_interval)
+            results["success"] += res.get("success", 0)
+            results["failed"] += res.get("failed", 0)
+
+        execute_job(inserts_std, "PricebookEntry", "insert")
+        execute_job(updates_std, "PricebookEntry", "update")
+        execute_job(inserts_custom, "PricebookEntry", "insert")
+        execute_job(updates_custom, "PricebookEntry", "update")
             
         return results
     
     
 if __name__ == '__main__':
     pass
-
-    # session = AppSession()
-    # session.login(
-    #     user_id='123213', 
-    #     sf_metadata=sf_api.get_user_sf_metadata()
-    # )
-    
-    # engine = MapperEngine(pb_path, m_path, session)
-    # prod2_df, pb_entry_df = engine.map_data()
-    
-    # prod_results = sf_api.load_product2(prod2_df, 'upsert') 
-
-    # total_success = 0
-    # if prod_results.get('update'):
-    #     total_success += prod_results['update']['success']
-    # if prod_results.get('insert'):
-    #     total_success += prod_results['insert']['success']
-
-    # if total_success > 0:
-    #     sf_api.load_pricebook_entry(pb_entry_df)
-    # else:
-    #     print("Brak poprawnie załadowanych produktów. Pomijam ładowanie cenników.")

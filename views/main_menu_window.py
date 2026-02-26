@@ -15,7 +15,8 @@ from dtos.credentials import Credentials
 
 from views.mapper_list_window import MapperListWindow
 from views.profile_manager_window import ProfileManagerWindow
-
+from views.widgets.progress_bar_dialog import ProgressBarDialog
+from utils.message_handler import MessageHandler
 
 class MainMenuWindow(QMainWindow):
     
@@ -124,6 +125,9 @@ class MainMenuWindow(QMainWindow):
             
     
     def load_data_to_Sf(self):
+        # progress_dialog = ProgressBarDialog('Preparing files...')
+        # progress_dialog.exec()
+        
         current_item = self.ui.mapperList.currentItem()
         mapper_path = current_item.data(Qt.UserRole)
         errors = []
@@ -146,13 +150,16 @@ class MainMenuWindow(QMainWindow):
         if total_success > 0:
             self.sf_api.load_pricebook_entry(pb_entry_df)
             
-            pb_name = self.pricebook_path.stem
+            pb_name = Path(self.pricebook_path).stem
             errors.extend(self.sf_api.execution_errors)
             if len(errors) > 0:
+                Path(f'./output/invalid_data/').mkdir(parents=True, exist_ok=True)
                 dict_to_xlsx(errors, f'./output/invalid_data/invalid-rows-{pb_name}.xlsx', True)
+                
+            MessageHandler.show_info(self, 'Loading Data to Saleforce', 'Loading pricebook file to Salesforce has ended successfully!')
         else:
             raise ProductsNotLoadedError('There were no products that could be properly loaded into Product2 object.')
-        
+    
     
 if __name__ == "__main__":
     import sys

@@ -32,8 +32,11 @@ def process_sheet(df: pd.DataFrame) -> pd.DataFrame:
 
 def dict_to_xlsx(obj: dict | list, file_path: str, use_date: bool = False):
     if use_date:
-        current_time = datetime.now().strftime("%Y-%m-%d_%H:%M:%S")
-        file_path = file_path + str(current_time)
+        current_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        path = Path(file_path)
+        new_filename = f"{path.stem}_{current_time}{path.suffix}"
+        file_path = path.with_name(new_filename)
+        
     df = pd.DataFrame(obj)
     df.to_excel(file_path, index=False)
 

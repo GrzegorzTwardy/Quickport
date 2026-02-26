@@ -1,8 +1,0 @@
-Name,ProductCode,Description,IsActive,Family,CurrencyIsoCode,ExternalDataSourceId,ExternalId,DisplayUrl,QuantityUnitOfMeasure,StockKeepingUnit,Delivery__c,StandardPrice__c,Przedzial__c,Producent__c,Dual_Use__c,Product_Line__c
-AB IPSec Mobile VPN 50 Seat License for Windows,,,True,,EUR,,,,,CD-01,Electronic Download,4000.00,,,,
-AB IPSec Mobile VPN 10 Seat License for Windows,,,True,,EUR,,,,,CD-02,Electronic Download,4400.00,,,,
-AB IPSec Mobile VPN 50 Seat License for Mac,,,True,,EUR,,,,,CD-03,Electronic Download,4800.00,,,,
-AB IPSec Mobile VPN 10 Seat License for Mac,,,True,,EUR,,,,,CD-04,Electronic Download,5200.00,,,,
-Transceiver 40Gb Short-Range QSFP+ for AB Firewall M,,,True,,EUR,,,,,CD-05,Hardware,5600.00,,,,
-AB Firewall M 2 Port 40Gb QSFP+ Fiber Module,,,True,,EUR,,,,,CD-06,Hardware,6000.00,,,,
-Cable Kit for Firewall AB222,,,True,,EUR,,,,,CD-07,Hardware,6400.00,,,,

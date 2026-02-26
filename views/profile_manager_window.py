@@ -277,7 +277,7 @@ class ProfileManagerWindow(QWidget):
             self.ui.loginButton.setEnabled(True)
             self.ui.loginButton.setText("Login")
             if "has been canceled" not in str(e):
-                MessageHandler.show_error(self, 'Login Error', 'An error occured while trying to log in:', str(e))
+                MessageHandler.show_error(self, 'Login Error', 'An error occured while trying to log in.', str(e))
     # ====================================================
     
     
