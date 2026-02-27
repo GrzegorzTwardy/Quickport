@@ -3,7 +3,7 @@ from pathlib import Path
 from dtos.session import AppSession
 from dtos.sf_metadata import SfMetadata
 from PySide6.QtWidgets import (QMainWindow, QListWidgetItem, QFileDialog, QMessageBox)
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Slot
 
 from core.mapper.mapper_engine import MapperEngine
 from salesforce_api.authenticator import Authenticator
@@ -17,6 +17,8 @@ from views.mapper_list_window import MapperListWindow
 from views.profile_manager_window import ProfileManagerWindow
 from views.widgets.progress_bar_dialog import ProgressBarDialog
 from utils.message_handler import MessageHandler
+from thread_workers.sf_export_worker import SalesforceExportWorker
+
 
 class MainMenuWindow(QMainWindow):
     
@@ -125,40 +127,60 @@ class MainMenuWindow(QMainWindow):
             
     
     def load_data_to_Sf(self):
-        # progress_dialog = ProgressBarDialog('Preparing files...')
-        # progress_dialog.exec()
-        
         current_item = self.ui.mapperList.currentItem()
+        if not current_item:
+            return
+        
         mapper_path = current_item.data(Qt.UserRole)
-        errors = []
-        
         if not mapper_path:
-            raise FileNotFoundError('Couldn\'t load selected Mapper.')
+            MessageHandler.show_error(
+                self,
+                'Path Error',
+                'Couldn\'t load selected Mapper.'
+            )
+            return
         
-        engine = MapperEngine(self.pricebook_path, mapper_path, self.session)
-        prod2_df, pb_entry_df = engine.map_data()
-        errors.extend(engine.execution_errors)
+        self.progress_dialog = ProgressBarDialog('Setting up export...')
+        self.progress_dialog.show()
         
-        prod_results = self.sf_api.load_product2(prod2_df, 'upsert') 
-
-        total_success = 0
-        if prod_results.get('update'):
-            total_success += prod_results['update']['success']
-        if prod_results.get('insert'):
-            total_success += prod_results['insert']['success']
+        self.worker = SalesforceExportWorker(
+            mapper_path=mapper_path,
+            pricebook_path=self.pricebook_path,
+            session=self.session,
+            sf_api=self.sf_api
+        )
         
-        if total_success > 0:
-            self.sf_api.load_pricebook_entry(pb_entry_df)
-            
-            pb_name = Path(self.pricebook_path).stem
-            errors.extend(self.sf_api.execution_errors)
-            if len(errors) > 0:
-                Path(f'./output/invalid_data/').mkdir(parents=True, exist_ok=True)
-                dict_to_xlsx(errors, f'./output/invalid_data/invalid-rows-{pb_name}.xlsx', True)
-                
-            MessageHandler.show_info(self, 'Loading Data to Saleforce', 'Loading pricebook file to Salesforce has ended successfully!')
-        else:
-            raise ProductsNotLoadedError('There were no products that could be properly loaded into Product2 object.')
+        self.worker.update_label.connect(self.update_label)
+        self.worker.update_progress_bar.connect(self.update_progress_bar)
+        self.worker.finished_success.connect(self.diplay_success_msg)
+        self.worker.finished_error.connect(self.display_failure_msg)
+        
+        self.worker.start()
+        
+    
+    # === WORKER SINGAL SLOTS ===
+    @Slot(str)
+    def update_label(self, msg: str):
+        self.progress_dialog.ui.infoLabel.setText(msg)
+    
+    @Slot(int, int)
+    def update_progress_bar(self, max_val: int, val: int):
+        self.progress_dialog.ui.progressBar.setMaximum(max_val)
+        self.progress_dialog.ui.progressBar.setValue(val)
+        
+    @Slot()
+    def diplay_success_msg(self):
+        self.progress_dialog.close()
+        self.worker = None # clear the reference
+        MessageHandler.show_info(self, 'Salesforce Export', 'Loading pricebook file to Salesforce has ended successfully!')
+        
+    @Slot(str)
+    def display_failure_msg(self, msg: str):
+        self.progress_dialog.close()
+        self.worker = None
+        MessageHandler.show_info(self, 'Salesforce Export', f"Error:\n'{msg}'")
+    # ===========================
+        
     
     
 if __name__ == "__main__":
