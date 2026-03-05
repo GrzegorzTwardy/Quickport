@@ -16,7 +16,7 @@ class ArgDialog(QDialog):
         super().__init__(parent)
         self.setModal(True)
         self.args_to_load = args_to_load
-        self.saved = False # for "changes will not be saved" pop up 
+        self.saved = False # for "changes will not be saved" pop up
         
         # DTO
         self.args = {}
@@ -33,6 +33,8 @@ class ArgDialog(QDialog):
         
         self.connect_signals()
         self.setup_args()
+        
+        self.default_state = self.args_widget.get_args_from_ui()
             
         self.layout.addWidget(self.back_button, 1, 0)
         self.layout.addWidget(self.save_button, 1, 1)
@@ -40,6 +42,11 @@ class ArgDialog(QDialog):
     
     def closeEvent(self, event: QCloseEvent):
         if self.saved:
+            super().closeEvent(event)
+            return
+
+        current_state = self.args_widget.get_args_from_ui()
+        if current_state == self.default_state:
             super().closeEvent(event)
             return
 

@@ -8,7 +8,6 @@ from core.mapper.mapper_model import ProductFieldMapping
 from core.mapper.mapper_functions import mapping_functions_list
 from views.widgets.utils.hover_label import HoverLabel
 from views.widgets.dialog_boxes.arg_dialog import ArgDialog
-# from views.widgets.utils.no_scroll_combo_box import NoScrollComboBox
 from views.widgets.utils.hover_combo import HoverComboBox
 from exceptions.gui_exceptions import MappingNotSetError
 

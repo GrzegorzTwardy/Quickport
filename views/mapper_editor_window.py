@@ -8,6 +8,7 @@ from pathlib import Path
 
 from ui.ui_mapper_editor import Ui_MapperEditor
 from utils.xlsx_manager import get_sheets_from_file
+from utils.message_handler import MessageHandler
 
 from views.widgets.sheet_tab import SheetTab
 from views.widgets.dialog_boxes.checklist_dialog import execute_checklist_dialog
@@ -18,7 +19,6 @@ from views.widgets.dialog_boxes.column_mapping_dialog import ColumnMappingDialog
 from core.mapper.mapper_model import MapperModel, SheetRule
 from dtos.session import AppSession
 from exceptions.gui_exceptions import MappingNotSetError
-
 
 # TODO: this doesnt work -> self.ui.mapper_name_line_edit.setText(self.mapper_config.name)
 
@@ -63,7 +63,7 @@ class MapperEditorWindow(QWidget):
         self.ui.choose_file_button.clicked.connect(self.open_file_dialog)
         self.ui.save_mapper_button.clicked.connect(self.save_mapper)
         self.ui.cancel_editing_button.clicked.connect(self.close)
-    
+        
     
     def closeEvent(self, event):
         msg = 'Do you want to close the editor without saving?'
@@ -177,19 +177,6 @@ class MapperEditorWindow(QWidget):
                     
         sheet_rule.source_schema_snapshot = new_columns_list
 
-
-    # OLD LOGIC add_sheet_tabs
-    # def add_sheet_tabs(self):
-    #     if self.mapper_config is None: # from file (new mapper)
-    #         for name, sheet in self.sheets.items():
-    #             new_tab = SheetTab(sheet, name, None, self.session, self)
-    #             self.sheet_tabs[name] = new_tab
-    #             self.ui.sheet_tabs.addTab(new_tab, name)
-    #     else: # from mapper config (editing existing mapper)
-    #         for sheet_rule in self.mapper_config.sheet_rules:
-    #             new_tab = SheetTab(None, sheet_rule.sheet_name, sheet_rule, self.session, self)
-    #             self.sheet_tabs[sheet_rule.sheet_name] = new_tab
-    #             self.ui.sheet_tabs.addTab(new_tab, sheet_rule.sheet_name)
     
     def add_sheet_tabs(self):
         if self.sheets: # excel file loaded
@@ -248,11 +235,14 @@ class MapperEditorWindow(QWidget):
                 mapper_dict = json.load(mapper_file)
                 return MapperModel.from_dict(mapper_dict)
         except FileNotFoundError:
-            raise FileNotFoundError(f"Mapper file does not exist: '{mapper_path.name}'.")
+            MessageHandler.show_error(self, 'File Not Found Error', f"Mapper file does not exist: '{mapper_path.name}'.")
+            return
         except json.JSONDecodeError:
-            raise ValueError(f"Invalid JSON in file: '{mapper_path.name}'.")
+            MessageHandler.show_error(self, 'Mapper File Error', f"An error has occured while loading file: '{mapper_path.name}'.")
+            return
         except KeyError:
-            raise KeyError(f"Mapper file corrupted: '{mapper_path.name}'.")
+            MessageHandler.show_error(self, 'Mapper File Error', f"Mapper file corrupted: '{mapper_path.name}'.")
+            return
                 
     
     # ==== SAVING MAPPER ======
@@ -301,4 +291,15 @@ class MapperEditorWindow(QWidget):
         
 
 if __name__ == "__main__":
-    pass
+    import sys
+    from PySide6.QtWidgets import QApplication
+    
+    app = QApplication(sys.argv)
+    session = AppSession()
+    session.test_login()
+    
+    window = MapperEditorWindow(session, Path('./mappers/broken.json'))
+    window.auto_select_xlsx_TEST()
+    window.show()
+    
+    sys.exit(app.exec())

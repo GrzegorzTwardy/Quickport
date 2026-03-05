@@ -128,7 +128,7 @@ class Ui_MapperEditor(object):
         MapperEditor.setWindowTitle(QCoreApplication.translate("MapperEditor", u"Mapper Editor", None))
         self.mapper_name_label.setText(QCoreApplication.translate("MapperEditor", u"Name:", None))
         self.choose_file_button.setText(QCoreApplication.translate("MapperEditor", u"Choose file", None))
-        self.mapper_name_line_edit.setPlaceholderText(QCoreApplication.translate("MapperEditor", u"new-mapper", None))
+        self.mapper_name_line_edit.setPlaceholderText(QCoreApplication.translate("MapperEditor", u"", None))
         self.input_file_label.setText(QCoreApplication.translate("MapperEditor", u"Preview: - no file selected -", None))
         self.cancel_editing_button.setText(QCoreApplication.translate("MapperEditor", u"Cancel", None))
         self.save_mapper_button.setText(QCoreApplication.translate("MapperEditor", u"Save", None))

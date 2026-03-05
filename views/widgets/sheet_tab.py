@@ -1,6 +1,8 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QWidget, QApplication, QListWidgetItem, QSizePolicy, QMessageBox)
+from PySide6.QtGui import QAction, QActionGroup
+from PySide6.QtWidgets import (QWidget, QApplication, QListWidgetItem, QSizePolicy, QMessageBox, QMenu)
 
+import copy
 import pandas as pd
 
 # for module testing
@@ -18,8 +20,6 @@ from dtos.session import AppSession
 from core.mapper.mapper_model import SheetRule, PricebookConfig, ProductFieldMapping
 
 # TODO: 
-# - add sorting to pb list
-# - walidacja sf_fields przy edycji za pomocą self.session (aktualne) i sf_target_field (sheet_rule)
 # - walidacja sf_fields przy edycji za pomocą self.session (aktualne) i sf_target_field (sheet_rule)
 class SheetTab(QWidget):
     
@@ -28,6 +28,7 @@ class SheetTab(QWidget):
         
         self.session = session
         self.df = df # sheet
+        self.preview_df = copy.deepcopy(self.df)
         self.ui = Ui_SheetFrame()
         self.ui.setupUi(self)
         self.sheet_name = sheet_name
@@ -95,8 +96,6 @@ class SheetTab(QWidget):
                 item.setCheckState(Qt.Unchecked)
 
             self.ui.pricebooks_list.addItem(item)
-            if i == 0:
-                self.ui.pricebooks_list.setCurrentItem(item)
 
         if missing_ids:
             msg_text = (
@@ -106,6 +105,34 @@ class SheetTab(QWidget):
             )
             QMessageBox.warning(self, 'Invalid Mapper Data', msg_text)
 
+
+    def setup_pricebook_sorting(self):        
+        sort_menu = QMenu(self)
+        self.action_az = QAction('A-Z', self)
+        self.action_az.setCheckable(True)
+        self.action_az.setChecked(True)
+        
+        self.action_za = QAction('Z-A', self)
+        self.action_za.setCheckable(True)
+        
+        self.sort_group = QActionGroup(self)
+        self.sort_group.addAction(self.action_za)
+        self.sort_group.addAction(self.action_az)
+        self.sort_group.setExclusive(True)
+        
+        sort_menu.addActions([self.action_az, self.action_za])
+        
+        self.ui.sort_button.setMenu(sort_menu)
+        
+        self.ui.pricebooks_list.setSortingEnabled(True)
+        self.ui.pricebooks_list.sortItems(Qt.AscendingOrder)
+        
+        self.action_az.triggered.connect(lambda: self.ui.pricebooks_list.sortItems(Qt.AscendingOrder))
+        self.action_za.triggered.connect(lambda: self.ui.pricebooks_list.sortItems(Qt.DescendingOrder))
+    
+        if self.ui.pricebooks_list.count() > 0:
+            self.ui.pricebooks_list.setCurrentRow(0)
+        
 
     def activate_currency_tab(self, item: QListWidgetItem):
         pricebook_name = item.text()
@@ -184,6 +211,7 @@ class SheetTab(QWidget):
     def setup_empty_frame(self):
         self._connect_signals()
         self.load_pricebooks()
+        self.setup_pricebook_sorting()
         self.create_currency_tabs()
         self.update_currency_tabs()
         self.load_product2_fields()

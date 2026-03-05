@@ -29,8 +29,15 @@ class HoverLabel(QLabel):
     def _create_popup_if_needed(self):
         if not self.popup:
             self.popup = FieldMetadataPopup(self.metadata)
-        pos = self.mapToGlobal(self.rect().bottomRight())
-        self.popup.move(pos + QPoint(6, 6))
+        
+        self.popup.adjustSize()
+        popup_width = self.popup.width()
+        top_left_pos = self.mapToGlobal(self.rect().topLeft())
+        target_x = top_left_pos.x() - popup_width - 6
+        target_y = top_left_pos.y()
+        self.popup.move(target_x, target_y)
+        # pos = self.mapToGlobal(self.rect().bottomRight())
+        # self.popup.move(pos + QPoint(6, 6))
 
     def enterEvent(self, event):
         if self.metadata:
