@@ -298,7 +298,7 @@ if __name__ == "__main__":
     session = AppSession()
     session.test_login()
     
-    window = MapperEditorWindow(session, Path('./mappers/broken.json'))
+    window = MapperEditorWindow(session, Path('./mappers/ab-mapper.json'))
     window.auto_select_xlsx_TEST()
     window.show()
     

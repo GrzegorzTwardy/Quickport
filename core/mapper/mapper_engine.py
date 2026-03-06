@@ -16,6 +16,8 @@ from exceptions.global_exceptions import *
 # IMPORTANT: We assume that the ProductCode is a required and unique field of the object in Salesforce
 # and the following functions operate based on it - the absence of this field results in an error
 
+PREVIEW_MAX_ROWS = 50
+
 class MapperEngine:
 
     def __init__(self, pricebook_path: Path | str, mapper_path: Path | str, session: AppSession):
@@ -216,6 +218,74 @@ class MapperEngine:
                 'Message': message,
                 'Details': f'Row {idx}: {str(row_clean)}'
             })
+    
+    
+def transform_data_for_preview(sheet_df: pd.DataFrame, prod2_mappings: list[ProductFieldMapping]) -> pd.DataFrame:
+    sheet_df = sheet_df.head(PREVIEW_MAX_ROWS)
+    
+    def raw_column(column: pd.Series):
+        values = column.copy()
+        invalid_mask = values.isna()
+        return values, invalid_mask
+            
+    prod2_result = pd.DataFrame(index=sheet_df.index)
+    
+    # === MAPPING PROD2 FIELDS ===
+    for mapping in prod2_mappings:
+        
+        sf_field = mapping.sf_target_field
+        
+        if not mapping.included:
+            prod2_result[sf_field] = None
+            continue
+        
+        # raw column
+        if mapping.source_column:
+            if mapping.source_column not in sheet_df.columns:
+                raise SourceColumnNotFoundError(
+                    f"""Column "{mapping.source_column}" not found in sheet.
+                    (mapping to SF field "{sf_field}")"""
+                )
+            
+            values, invalid_mask = raw_column(sheet_df[mapping.source_column])
+        # mapping
+        elif mapping.mapping_type:
+            values, invalid_mask = apply_mapping_function(sheet_df, mapping)  
+
+        
+        prod2_result[sf_field] = values
+
+        # # ---- mapping function errors
+        # if mapping.mapping_type and invalid_mask.any():
+        #     self._collect_invalid_rows(
+        #         sheet_df,
+        #         invalid_mask,
+        #         sheet_name,
+        #         sf_field,
+        #         reason=f'Mapping type {mapping.mapping_type} failed'
+        #     )
+        
+        # # ---- handling unwanted nulls
+        # if not mapping.allows_nulls:
+        #     null_mask = values.isna()
+
+        #     if null_mask.any():
+        #         self._collect_invalid_rows(
+        #             sheet_df,
+        #             null_mask,
+        #             sheet_name,
+        #             sf_field,
+        #             reason='Null value not allowed'
+        #         )
+    
+    # # check if ProductCode (key field for mapping PricebookEntry) is missing
+    # if 'ProductCode' not in prod2_result.columns:
+    #     raise MappingError(f'ProductCode is missing in sheet {sheet_name}')
+    # if prod2_result['ProductCode'].isna().all():
+    #     raise MappingError(f'ProductCode is required in sheet {sheet_name}')
+
+
+    return prod2_result
     
 
 if __name__ == '__main__':

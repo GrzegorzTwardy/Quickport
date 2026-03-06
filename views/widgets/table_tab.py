@@ -14,10 +14,11 @@ class TableTab(QWidget):
         
         self.setup_ui()
         
-        if self.sheet_name == 'Product2 Preview':
-            self.setup_product2_table()
-        else:
-            self.setup_file_preview_table()
+        # if self.sheet_name == 'Product2 Preview':
+        #     self.setup_product2_table()
+        # else:
+        #     self.setup_file_preview_table()
+        self.populate_table_widget(self.df)
         
         
     def setup_ui(self):
@@ -31,20 +32,20 @@ class TableTab(QWidget):
     
     
     def setup_file_preview_table(self):
-        self.populate_table_widget(self.table, self.df)
+        self.populate_table_widget(self.df)
     
     
-    def populate_table_widget(self, table, df):
+    def populate_table_widget(self, df):
         # Set dimensions
-        table.setRowCount(len(df))
-        table.setColumnCount(len(df.columns))
+        self.table.setRowCount(len(df))
+        self.table.setColumnCount(len(df.columns))
 
         indexed_cols = [f'{i}: {col}' for i, col in enumerate(df.columns)]
 
         # Set headers
         # table.setHorizontalHeaderLabels(df.columns.astype(str).tolist())
-        table.setHorizontalHeaderLabels(indexed_cols)
-
+        self.table.setHorizontalHeaderLabels(indexed_cols)
+        
         # Fill table
         for row in range(len(df)):
             for col in range(len(df.columns)):
@@ -55,7 +56,7 @@ class TableTab(QWidget):
                 if isinstance(value, (int, float)):
                     item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
 
-                table.setItem(row, col, item)
+                self.table.setItem(row, col, item)
 
 
 if __name__ == '__main__':

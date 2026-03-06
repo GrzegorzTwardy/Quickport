@@ -18,6 +18,7 @@ from views.widgets.table_tab import TableTab
 from dtos.session import AppSession
 
 from core.mapper.mapper_model import SheetRule, PricebookConfig, ProductFieldMapping
+from core.mapper.mapper_engine import transform_data_for_preview
 
 # TODO: 
 # - walidacja sf_fields przy edycji za pomocą self.session (aktualne) i sf_target_field (sheet_rule)
@@ -28,7 +29,7 @@ class SheetTab(QWidget):
         
         self.session = session
         self.df = df # sheet
-        self.preview_df = copy.deepcopy(self.df)
+        self.preview_df = None
         self.ui = Ui_SheetFrame()
         self.ui.setupUi(self)
         self.sheet_name = sheet_name
@@ -42,9 +43,6 @@ class SheetTab(QWidget):
         # product2 fields
         self.next_prod2_row_id = 2 # 0: headers, 1: split line
         self.product2_rows: dict[str, Product2Row] = {}
-        
-        # preview tables
-        self.tables: dict[str, QWidget] = {}
         
         # for testing __main__
         if self.session is None:
@@ -187,6 +185,9 @@ class SheetTab(QWidget):
                 field_mapping=mapping_config,
                 parent=self.ui.product_fields_scroll_area_contents
             )
+            
+            row.config_changed.connect(self.load_product_preview)
+            
             self.product2_rows[field_name] = row
             add_row_to_grid(grid, row, self.next_prod2_row_id)
             self.next_prod2_row_id += 1
@@ -202,10 +203,12 @@ class SheetTab(QWidget):
                 parent=self.ui.product_fields_scroll_area_contents
             )
 
+            row.config_changed.connect(self.load_product_preview)
+
             self.product2_rows[field_name] = row
             add_row_to_grid(grid, row, self.next_prod2_row_id)   
             self.next_prod2_row_id += 1
-
+    
     
     # ==== SETTING UP NEW SHEET TAB =====
     def setup_empty_frame(self):
@@ -284,12 +287,28 @@ class SheetTab(QWidget):
     def create_table_tabs(self):
         # product2-preview, 'filename'.xlsx
         if self.df is not None:
-            file_preview_table = TableTab(self.sheet_name, self.df)
-            product2_table = TableTab('Product2 Preview', self.df)
+            file_preview_df = self.df.head(50)
+            file_preview_table = TableTab(self.sheet_name, file_preview_df)
+            
+            # empty Product2 Preview table with headers (Salesforce Prod2 field names)
+            self.preview_df = pd.DataFrame(columns=[field_name for field_name in self.product2_rows.keys()])
+            self.product2_table = TableTab('Product2 Preview', self.preview_df)
             
             self.ui.xlsx_tabs.addTab(file_preview_table, self.sheet_name)
-            self.ui.xlsx_tabs.addTab(product2_table, 'Product2 Preview')
+            self.ui.xlsx_tabs.addTab(self.product2_table, 'Product2 Preview')
        
+       
+    def load_product_preview(self):
+        self.product2_table.table.clear()
+        
+        sheet_rule = self.get_sheet_config()
+        product2_mappings = sheet_rule.product2_mappings
+        
+        self.preview_df = transform_data_for_preview(self.df, product2_mappings)
+        
+        # update the QTableWidget
+        self.product2_table.populate_table_widget(self.preview_df)
+    
     
     # ---- DTOS
     def get_sheet_config(self) -> SheetRule:

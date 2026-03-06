@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, QObject
+from PySide6.QtCore import Qt, QObject, Signal
 from PySide6.QtWidgets import (
     QLabel, QGridLayout,
     QCheckBox, QComboBox, QSizePolicy
@@ -13,6 +13,8 @@ from exceptions.gui_exceptions import MappingNotSetError
 
 
 class Product2Row(QObject):
+    
+    config_changed = Signal()
     
     def __init__(
         self, 
@@ -48,6 +50,12 @@ class Product2Row(QObject):
         self.function_combo.activated.connect(self.on_function_selected)
         self.include_checkbox.checkStateChanged.connect(self.change_row_state)
 
+        # using lambda to bypass passing unnecesary args to a Signal()
+        self.include_checkbox.stateChanged.connect(lambda *args: self.config_changed.emit())
+        self.field_combo.currentIndexChanged.connect(lambda *args: self.config_changed.emit())
+        self.function_combo.currentIndexChanged.connect(lambda *args: self.config_changed.emit())
+        self.allow_nulls_checkbox.stateChanged.connect(lambda *args: self.config_changed.emit())
+        
     
     def load_mapping(self):
         if not self.field_mapping.included:
