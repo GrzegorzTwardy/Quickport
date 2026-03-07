@@ -1,8 +1,7 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QTimer
 from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtWidgets import (QWidget, QApplication, QListWidgetItem, QSizePolicy, QMessageBox, QMenu)
 
-import copy
 import pandas as pd
 
 # for module testing
@@ -10,6 +9,7 @@ from pathlib import Path
 from utils.xlsx_manager import get_sheets_from_file
 
 from ui.ui_sheet_frame import Ui_SheetFrame
+from utils.message_handler import MessageHandler
 
 from views.widgets.currency_tab import CurrencyTab
 from views.widgets.product2_row import Product2Row
@@ -49,6 +49,12 @@ class SheetTab(QWidget):
             self.make_session()
         
         self.setup_empty_frame()
+        
+        # timer setup for live table preview
+        self.preview_timer = QTimer(self)
+        self.preview_timer.setSingleShot(True)
+        self.preview_timer.setInterval(400)
+        self.preview_timer.timeout.connect(self.load_product_preview)
         
 
     def make_session(self):
@@ -186,8 +192,8 @@ class SheetTab(QWidget):
                 parent=self.ui.product_fields_scroll_area_contents
             )
             
-            row.config_changed.connect(self.load_product_preview)
-            
+            row.config_changed.connect(self.schedule_preview_update)
+
             self.product2_rows[field_name] = row
             add_row_to_grid(grid, row, self.next_prod2_row_id)
             self.next_prod2_row_id += 1
@@ -203,7 +209,7 @@ class SheetTab(QWidget):
                 parent=self.ui.product_fields_scroll_area_contents
             )
 
-            row.config_changed.connect(self.load_product_preview)
+            row.config_changed.connect(self.schedule_preview_update)
 
             self.product2_rows[field_name] = row
             add_row_to_grid(grid, row, self.next_prod2_row_id)   
@@ -219,6 +225,7 @@ class SheetTab(QWidget):
         self.update_currency_tabs()
         self.load_product2_fields()
         self.create_table_tabs()
+        self.schedule_preview_update()
         
             
    # ---- CURRENCY TABS MANAGEMENT
@@ -297,29 +304,38 @@ class SheetTab(QWidget):
             self.ui.xlsx_tabs.addTab(file_preview_table, self.sheet_name)
             self.ui.xlsx_tabs.addTab(self.product2_table, 'Product2 Preview')
        
-       
+    
+    def schedule_preview_update(self):
+        if self.df is not None:
+            self.preview_timer.start()
+            
+    
     def load_product_preview(self):
-        self.product2_table.table.clear()
+        try:
+            sheet_rule = self.get_sheet_config(strict=False)
+            product2_mappings = sheet_rule.product2_mappings
+            
+            self.preview_df = transform_data_for_preview(self.df, product2_mappings)
+            
+            # update the QTableWidget
+            self.product2_table.table.clearContents()
+            self.product2_table.populate_table_widget(self.preview_df)
+        except Exception:
+            pass
         
-        sheet_rule = self.get_sheet_config()
-        product2_mappings = sheet_rule.product2_mappings
-        
-        self.preview_df = transform_data_for_preview(self.df, product2_mappings)
-        
-        # update the QTableWidget
-        self.product2_table.populate_table_widget(self.preview_df)
-    
-    
     # ---- DTOS
-    def get_sheet_config(self) -> SheetRule:
+    # strict flag meaning:
+    # - if true: normal data gathering with validation for the mapper file (at least one combo box must have a value)
+    # - if false: data is gathered for the Product2Preview table (bypassing valudation: combo boxes can be empty)
+    def get_sheet_config(self, strict: bool = True) -> SheetRule:
         
         columns = self.df.columns.tolist() if self.df is not None else self.sheet_rule.source_schema_snapshot
-        
+
         return SheetRule(
             sheet_name=self.sheet_name,
             source_schema_snapshot=columns,
             pricebook_configs=self.get_pricebook_configs(),
-            product2_mappings=self.get_product2_mappings()
+            product2_mappings=self.get_product2_mappings(strict=strict)
         )
         
         
@@ -333,11 +349,11 @@ class SheetTab(QWidget):
         return data
     
 
-    def get_product2_mappings(self) -> list[ProductFieldMapping]:
+    def get_product2_mappings(self, strict: bool = True) -> list[ProductFieldMapping]:
         data = [] # product2_mappings
         
         for row_widget in self.product2_rows.values():
-            field_mapping = row_widget.get_product2_mapping()
+            field_mapping = row_widget.get_product2_mapping(strict=strict)
             data.append(field_mapping)
         return data
             

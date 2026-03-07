@@ -53,7 +53,7 @@ class Product2Row(QObject):
         # using lambda to bypass passing unnecesary args to a Signal()
         self.include_checkbox.stateChanged.connect(lambda *args: self.config_changed.emit())
         self.field_combo.currentIndexChanged.connect(lambda *args: self.config_changed.emit())
-        self.function_combo.currentIndexChanged.connect(lambda *args: self.config_changed.emit())
+        # self.function_combo.currentIndexChanged.connect(lambda *args: self.config_changed.emit())
         self.allow_nulls_checkbox.stateChanged.connect(lambda *args: self.config_changed.emit())
         
     
@@ -138,16 +138,23 @@ class Product2Row(QObject):
         return name
 
     # DTO
-    def get_product2_mapping(self) -> ProductFieldMapping | None:    
+    # strict flag meaning:
+    # - if true: normal data gathering with validation for the mapper file (at least one combo box must have a value)
+    # - if false: data is gathered for the Product2Preview table (bypassing valudation: combo boxes can be empty)
+    def get_product2_mapping(self, strict: bool = True) -> ProductFieldMapping | None:    
         source_column = self.field_combo.currentData()
         mapping_type = self.function_combo.currentData()
+        is_included = self.include_checkbox.isChecked()
         
         # if both options are empty '...'
-        if self.include_checkbox.isChecked() and source_column is None and mapping_type is None:
-            raise MappingNotSetError(self.field_name)
+        if is_included and source_column is None and mapping_type is None:
+            if strict:
+                raise MappingNotSetError(self.field_name)
+            else:
+                is_included = False # if the field config has not been set yet it won't be displayed in the preview table
         
         return ProductFieldMapping(
-            included=self.include_checkbox.isChecked(),
+            included=is_included,
             sf_target_field=self.field_name,
             source_column=source_column,
             mapping_type=mapping_type,
@@ -179,9 +186,10 @@ class Product2Row(QObject):
         self._arg_window.args_saved.connect(_save_args)
         self._arg_window.canceled.connect(_on_canceled)
         
-        # === label toggle logic ===
+        # === label toggle AND preview table refresh logic ===
         self.name_label.show_popup_manual()
         self._arg_window.finished.connect(lambda _: self.name_label.hide_popup_manual())
+        self._arg_window.finished.connect(lambda *args: self.config_changed.emit())
         # ==========================
         
         self._arg_window.show()

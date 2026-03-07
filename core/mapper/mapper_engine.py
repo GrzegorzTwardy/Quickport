@@ -125,7 +125,12 @@ class MapperEngine:
                 values, invalid_mask = raw_column(sheet_df[mapping.source_column])
             # mapping
             elif mapping.mapping_type:
-                values, invalid_mask = apply_mapping_function(sheet_df, mapping)  
+                values, invalid_mask = apply_mapping_function(sheet_df, mapping)
+            else:
+                raise MappingError(
+                    f'Invalid configuration for field "{sf_field}" in sheet "{sheet_name}". '
+                    f'Neither source_column nor mapping_type was provided.'
+                )
 
             
             prod2_result[sf_field] = values
@@ -242,15 +247,20 @@ def transform_data_for_preview(sheet_df: pd.DataFrame, prod2_mappings: list[Prod
         # raw column
         if mapping.source_column:
             if mapping.source_column not in sheet_df.columns:
-                raise SourceColumnNotFoundError(
-                    f"""Column "{mapping.source_column}" not found in sheet.
-                    (mapping to SF field "{sf_field}")"""
-                )
+                # empty for missing column
+                values = pd.Series([None] * len(sheet_df), index=sheet_df.index)
+                # raise SourceColumnNotFoundError(
+                #     f"""Column "{mapping.source_column}" not found in sheet.
+                #     (mapping to SF field "{sf_field}")"""
+                # )
             
             values, invalid_mask = raw_column(sheet_df[mapping.source_column])
         # mapping
         elif mapping.mapping_type:
             values, invalid_mask = apply_mapping_function(sheet_df, mapping)  
+        else:
+            # field config not set yet
+            values = pd.Series([None] * len(sheet_df), index=sheet_df.index)
 
         
         prod2_result[sf_field] = values
