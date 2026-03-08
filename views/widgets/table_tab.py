@@ -50,9 +50,15 @@ class TableTab(QWidget):
         for row in range(len(df)):
             for col in range(len(df.columns)):
                 value = df.iat[row, col]
-                item = QTableWidgetItem(str(value))
+                
+                if pd.isna(value):
+                    display_text = ''
+                else:
+                    display_text = str(value)
+                
+                item = QTableWidgetItem(display_text)
 
-                # Optional: align numbers to the right
+                # align numbers to the right
                 if isinstance(value, (int, float)):
                     item.setTextAlignment(Qt.AlignRight | Qt.AlignVCenter)
 

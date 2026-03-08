@@ -2,7 +2,9 @@ import pandas as pd
 from exceptions.mapper_exceptions import UnknownMappingTypeError
 from core.mapper.mapper_model import ProductFieldMapping
 
+pd.set_option('future.no_silent_downcasting', True)
 mapping_functions_list = ['SET ALL', 'PRICE', 'REPLACE', 'JOIN']
+
 
 # UTILITY FUNCTIONS
 def cell(column: pd.Series, row: int):
@@ -38,7 +40,18 @@ def set_all(target_index: pd.Index, text: str):
 
 # replaces values X in column with values Y
 def replace_values(column: pd.Series, mapping: dict[str, str]):
-    values = column.replace(mapping)
+    
+    def str_conversion(val):
+        if pd.isna(val):
+            return val
+        if isinstance(val, float) and val.is_integer():
+            return str(int(val))
+        return str(val)
+    
+    # using values from dataframe as strings
+    str_column = column.map(str_conversion)
+    
+    values = str_column.replace(mapping)
     invalid_mask = pd.Series(False, index=column.index)
     return values, invalid_mask
 

@@ -48,13 +48,13 @@ class SheetTab(QWidget):
         if self.session is None:
             self.make_session()
         
-        self.setup_empty_frame()
-        
         # timer setup for live table preview
         self.preview_timer = QTimer(self)
         self.preview_timer.setSingleShot(True)
         self.preview_timer.setInterval(400)
         self.preview_timer.timeout.connect(self.load_product_preview)
+        
+        self.setup_empty_frame()
         
 
     def make_session(self):
