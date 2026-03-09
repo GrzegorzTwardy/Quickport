@@ -17,8 +17,8 @@ class ColumnMappingDialog(QDialog):
         layout = QVBoxLayout(self)
         
         info_label = QLabel(
-            f"Mapper expects specific column names in '{sheet_name}' spreadsheet.\n"
-            'Map the columns from your file to the names in Mapper.'
+            'The uploaded spreadsheet is missing some of the column names required by the mapper.\n'
+            'Please map the column names in the file to the expected names.'
         )
         layout.addWidget(info_label)
         

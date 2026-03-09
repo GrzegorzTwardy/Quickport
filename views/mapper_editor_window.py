@@ -81,12 +81,10 @@ class MapperEditorWindow(QWidget):
             "", 
             "Excel files (*.xlsx *.xls)"
         )
-        if file_path: 
-            self.ui.input_file_label.setText(f'"{os.path.basename(file_path)}"')
+        if file_path:
             self.path_to_pricebook = file_path
             # self.mapper_config = None
             self.load_xlsx_file() # load data from chosen file
-            self.ui.save_mapper_button.setEnabled(True)
             
             
     # for testing purposes
@@ -131,9 +129,13 @@ class MapperEditorWindow(QWidget):
         
         # canceled
         if not selected_sheets:
+            self.path_to_pricebook = None
             return
         
-        # confirmation for overriding existing sheets (if they exist)
+        self.ui.input_file_label.setText(f'"{os.path.basename(self.path_to_pricebook)}"')
+        self.ui.save_mapper_button.setEnabled(True)
+        
+        # confirmation for overriding the existing sheets (if new file was chosen)
         if self.sheets:
             if not self.confirm_replace_sheets():
                 return
@@ -214,7 +216,7 @@ class MapperEditorWindow(QWidget):
                                 sheet_df.columns.tolist()
                             )
                         else:
-                            pass
+                            continue
                         
                 new_tab = SheetTab(sheet_df, name, rule_for_sheet, self.session, self)
                 self.sheet_tabs[name] = new_tab
@@ -298,8 +300,9 @@ if __name__ == "__main__":
     session = AppSession()
     session.test_login()
     
-    window = MapperEditorWindow(session, Path('./mappers/ab-mapper.json'))
-    window.auto_select_xlsx_TEST()
+    window = MapperEditorWindow(session, Path('./mappers/diff-xlsx-mapper.json'))
+    # window = MapperEditorWindow(session, None)
+    # window.auto_select_xlsx_TEST()
     window.show()
     
     sys.exit(app.exec())
