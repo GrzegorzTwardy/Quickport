@@ -5,7 +5,7 @@ from PySide6.QtWidgets import (
 )
 
 from core.mapper.mapper_model import CurrencyMapping
-
+from utils.convert_to_valid_price import convert_to_valid_price
 from exceptions.gui_exceptions import MappingNotSetError
 
 class CurrencyRow(QWidget):
@@ -41,25 +41,11 @@ class CurrencyRow(QWidget):
         self.curr_field_combo = QComboBox(self)
         self.curr_field_combo.addItem('...', None)
         
-        # if self.currency_mapping is not None: # mapper is in editing mode
-        #     snapshot_cols_count = len(self.sheet_columns) - self.df_column_amount
-        #     if snapshot_cols_count < 0:
-        #         raise ValueError('Error while calculating available columns.')
-            
-        #     for i, col in enumerate(self.sheet_columns):
-        #         if i < snapshot_cols_count:
-        #             self.curr_field_combo.addItem(f'{i} (Saved in Mapper): {col}', col)
-        #         else:
-        #             self.curr_field_combo.addItem(f'{i}: {col}', col)
-        # else: # mapper is creating mode
-        #     for i, col in enumerate(self.sheet_columns):
-        #         self.curr_field_combo.addItem(f'{i}: {col}', col)
-        #     self.curr_field_combo.setCurrentIndex(0)
         for i, col in enumerate(self.sheet_columns):
             self.curr_field_combo.addItem(f'{i}: {col}', col)
         self.curr_field_combo.setCurrentIndex(0)
 
-        regex = QRegularExpression(r"^\d+(\.\d{1,2})?$")
+        regex = QRegularExpression(r"^\d+([.,]\d{1,10})?$")
         validator = QRegularExpressionValidator(regex, self)
         
         self.c_factor_ledit = QLineEdit('1.00', self)
@@ -70,6 +56,7 @@ class CurrencyRow(QWidget):
             QSizePolicy.Fixed
         )
         self.c_factor_ledit.setMinimumWidth(0)
+        self.c_factor_ledit.editingFinished.connect(self.autocorrect_price)
             
         self.curr_field_combo.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.curr_field_combo.setMinimumWidth(0)
@@ -99,7 +86,15 @@ class CurrencyRow(QWidget):
         
         if self.currency_mapping is not None:
             self.load_mapping()
-        
+
+
+    def autocorrect_price(self):
+        current_text = self.c_factor_ledit.text()
+        valid_price = convert_to_valid_price(current_text)
+
+        if valid_price:
+            self.c_factor_ledit.setText(str(valid_price))
+
     
     def load_mapping(self):
         source_column = self.currency_mapping.source_column
@@ -148,7 +143,7 @@ if __name__ == "__main__":
 
     app = QApplication(sys.argv)
 
-    window = CurrencyRow('EUR', ['field1', 'field2'])
+    window = CurrencyRow('EUR', ['field1', 'field2'], None)
     window.show()
 
     sys.exit(app.exec())

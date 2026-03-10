@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QLabel, QLineEdit, QGridLayout, QSizePolicy, 
     QPushButton, QDialog, QComboBox, QFrame)
 
+from utils.convert_to_valid_price import convert_to_valid_price
 from exceptions.mapper_exceptions import UnknownMappingTypeError, MappingError
 
 class ArgDialog(QDialog):
@@ -187,15 +188,15 @@ class PriceArgs(QWidget):
         setup_src_column_combo(sheet_columns, self.src_col_combo)
         stylize_combo(self.src_col_combo)
         
-        # conversion factor TODO: add "."/"," option
         self.cf_label = QLabel(self)
         self.cf_label.setText('conversion factor: ')       
         self.cf_le = QLineEdit(self)
         self.cf_le.setObjectName('text')
-        regex = QRegularExpression(r"^\d+(\.\d{1,2})?$")
+        regex = QRegularExpression(r"^\d+([.,]\d{1,10})?$")
         validator = QRegularExpressionValidator(regex, self)
         self.cf_le.setValidator(validator)
         self.cf_le.setText('1.00')
+        self.cf_le.editingFinished.connect(self.autocorrect_price)
         
         # adding widgets to layout
         self.layout.addRow(self.src_col_label, self.src_col_combo)
@@ -204,6 +205,14 @@ class PriceArgs(QWidget):
         # loading arguments from saved config
         if args:
             self.fill_ui(args)
+
+
+    def autocorrect_price(self):
+        current_text = self.cf_le.text()
+        valid_price = convert_to_valid_price(current_text)
+
+        if valid_price:
+            self.cf_le.setText(str(valid_price))
 
 
     def fill_ui(self, args: dict):
