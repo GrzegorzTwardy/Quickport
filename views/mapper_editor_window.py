@@ -20,7 +20,6 @@ from core.mapper.mapper_model import MapperModel, SheetRule
 from dtos.session import AppSession
 from exceptions.gui_exceptions import MappingNotSetError
 
-# TODO: this doesnt work -> self.ui.mapper_name_line_edit.setText(self.mapper_config.name)
 
 class MapperEditorWindow(QWidget):
     

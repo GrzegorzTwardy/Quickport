@@ -23,7 +23,7 @@ class Ui_ProfileManager(object):
     def setupUi(self, profileManager):
         if not profileManager.objectName():
             profileManager.setObjectName(u"profileManager")
-        profileManager.resize(412, 444)
+        profileManager.resize(422, 458)
         self.gridLayout = QGridLayout(profileManager)
         self.gridLayout.setObjectName(u"gridLayout")
         self.profilesLabel = QLabel(profileManager)
