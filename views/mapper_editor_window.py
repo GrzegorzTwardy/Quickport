@@ -74,6 +74,21 @@ class MapperEditorWindow(QWidget):
             event.ignore()
     
     
+    def reset_source_file(self):
+        # clearing out xlsx data
+        self.path_to_pricebook = None
+        self.all_sheets.clear()
+        self.sheet.clear()
+
+        self.ui.input_file_label.setText('- no file selected -')
+        self.ui.save_mapper_button.setEnabled(False)
+        self.clear_sheet_tabs()
+
+        # restoring tabs if mapper file was being edited
+        if self.mapper_config:
+            self.add_sheet_tabs()
+
+
     def open_file_dialog(self):
         file_path, _ = QFileDialog.getOpenFileName(
             self, 
@@ -82,9 +97,9 @@ class MapperEditorWindow(QWidget):
             "Excel files (*.xlsx *.xls)"
         )
         if file_path:
-            self.path_to_pricebook = file_path
+            # self.path_to_pricebook = file_path
             # self.mapper_config = None
-            self.load_xlsx_file() # load data from chosen file
+            self.load_xlsx_file(file_path) # load data from chosen file
             
             
     # for testing purposes
@@ -120,31 +135,33 @@ class MapperEditorWindow(QWidget):
         return msg.exec() == QMessageBox.Ok
     
     
-    def load_xlsx_file(self):
-        self.all_sheets = get_sheets_from_file(self.path_to_pricebook)
+    def load_xlsx_file(self, file_path: Path | str):
+        try:
+            temp_all_sheets = get_sheets_from_file(file_path)
+        except Exception as e:
+            MessageHandler.show_error(self, 'Load Error', f"Couldn't load file: '{e}'")
+            return
         
         # user selects sheets to add
-        sheet_names = [name for name in self.all_sheets.keys()]
-        selected_sheets = execute_checklist_dialog(sheet_names, user_operation='Choose sheets to add', parent=None)
+        sheet_names = [name for name in temp_all_sheets.keys()]
+        selected_sheets = execute_checklist_dialog(sheet_names, user_operation='Choose sheets to add', parent=self)
         
         # canceled
         if not selected_sheets:
-            self.path_to_pricebook = None
             return
         
-        self.ui.input_file_label.setText(f'"{os.path.basename(self.path_to_pricebook)}"')
-        self.ui.save_mapper_button.setEnabled(True)
-        
-        # confirmation for overriding the existing sheets (if new file was chosen)
+        # override
         if self.sheets:
             if not self.confirm_replace_sheets():
                 return
+
+        self.path_to_pricebook = file_path
+        self.all_sheets = temp_all_sheets
         
         self.clear_sheet_tabs()
     
-        if selected_sheets:
-            for name in selected_sheets:
-                self.sheets[name] = self.all_sheets[name]
+        for name in selected_sheets:
+            self.sheets[name] = self.all_sheets[name]
         
         self.add_sheet_tabs()
 
@@ -187,6 +204,8 @@ class MapperEditorWindow(QWidget):
                 for rule in self.mapper_config.sheet_rules:
                     existing_rules_map[rule.sheet_name] = rule
 
+            canceled_sheets = []
+
             for name, sheet_df in self.sheets.items():
                 rule_for_sheet = existing_rules_map.get(name)
                 
@@ -216,11 +235,22 @@ class MapperEditorWindow(QWidget):
                                 sheet_df.columns.tolist()
                             )
                         else:
+                            canceled_sheets.append(name)
                             continue
-                        
+
                 new_tab = SheetTab(sheet_df, name, rule_for_sheet, self.session, self)
                 self.sheet_tabs[name] = new_tab
                 self.ui.sheet_tabs.addTab(new_tab, name)
+
+            # removing canceled sheets from ram
+            for name in canceled_sheets:
+                del self.sheets[name]
+
+            if not self.sheet_tabs:
+                self.reset_source_file()
+            else:
+                self.ui.input_file_label.setText(f'"{os.path.basename(self.path_to_pricebook)}"')
+                self.ui.save_mapper_button.setEnabled(True)
                 
         elif self.mapper_config: # mapper in edit mode without excel file provided
             for sheet_rule in self.mapper_config.sheet_rules:
@@ -228,6 +258,9 @@ class MapperEditorWindow(QWidget):
                 new_tab = SheetTab(None, name, sheet_rule, self.session, self)
                 self.sheet_tabs[name] = new_tab
                 self.ui.sheet_tabs.addTab(new_tab, name)
+            
+            self.ui.input_file_label.setText('- no file selected -')
+            self.ui.save_mapper_button.setEnabled(True)
     
     
     # ==== EDITING EXISTING MAPPER =====
