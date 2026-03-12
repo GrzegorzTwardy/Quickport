@@ -249,10 +249,6 @@ def transform_data_for_preview(sheet_df: pd.DataFrame, prod2_mappings: list[Prod
             if mapping.source_column not in sheet_df.columns:
                 # empty for missing column
                 values = pd.Series([None] * len(sheet_df), index=sheet_df.index)
-                # raise SourceColumnNotFoundError(
-                #     f"""Column "{mapping.source_column}" not found in sheet.
-                #     (mapping to SF field "{sf_field}")"""
-                # )
             
             values, invalid_mask = raw_column(sheet_df[mapping.source_column])
         # mapping
@@ -262,38 +258,7 @@ def transform_data_for_preview(sheet_df: pd.DataFrame, prod2_mappings: list[Prod
             # field config not set yet
             values = pd.Series([None] * len(sheet_df), index=sheet_df.index)
 
-        
         prod2_result[sf_field] = values
-
-        # # ---- mapping function errors
-        # if mapping.mapping_type and invalid_mask.any():
-        #     self._collect_invalid_rows(
-        #         sheet_df,
-        #         invalid_mask,
-        #         sheet_name,
-        #         sf_field,
-        #         reason=f'Mapping type {mapping.mapping_type} failed'
-        #     )
-        
-        # # ---- handling unwanted nulls
-        # if not mapping.allows_nulls:
-        #     null_mask = values.isna()
-
-        #     if null_mask.any():
-        #         self._collect_invalid_rows(
-        #             sheet_df,
-        #             null_mask,
-        #             sheet_name,
-        #             sf_field,
-        #             reason='Null value not allowed'
-        #         )
-    
-    # # check if ProductCode (key field for mapping PricebookEntry) is missing
-    # if 'ProductCode' not in prod2_result.columns:
-    #     raise MappingError(f'ProductCode is missing in sheet {sheet_name}')
-    # if prod2_result['ProductCode'].isna().all():
-    #     raise MappingError(f'ProductCode is required in sheet {sheet_name}')
-
 
     return prod2_result
     

@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, Signal, QTimer
 from PySide6.QtGui import QAction, QActionGroup
 from PySide6.QtWidgets import (QWidget, QApplication, QListWidgetItem, QSizePolicy, QMessageBox, QMenu)
 
@@ -23,6 +23,8 @@ from core.mapper.mapper_engine import transform_data_for_preview
 # TODO: 
 # - walidacja sf_fields przy edycji za pomocą self.session (aktualne) i sf_target_field (sheet_rule)
 class SheetTab(QWidget):
+    
+    pricebook_error = Signal()
     
     def __init__(self, df: pd.DataFrame | None, sheet_name: str, sheet_rule: SheetRule | None, session: AppSession, parent=None):
         super().__init__()
@@ -54,7 +56,7 @@ class SheetTab(QWidget):
         self.preview_timer.setInterval(400)
         self.preview_timer.timeout.connect(self.load_product_preview)
         
-        self.setup_empty_frame()
+        # self.setup_empty_frame()
         
 
     def make_session(self):
@@ -108,6 +110,7 @@ class SheetTab(QWidget):
                 '\n'.join(f'- ID: {pid}' for pid in missing_ids)
             )
             QMessageBox.warning(self, 'Invalid Mapper Data', msg_text)
+            self.pricebook_error.emit()    
 
 
     def setup_pricebook_sorting(self):        

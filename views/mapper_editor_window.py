@@ -32,6 +32,7 @@ class MapperEditorWindow(QWidget):
         self.setAttribute(Qt.WA_DeleteOnClose)
         session.validate()
         self.session = session
+        self.session.sf_metadata.pricebooks = {}
         
         self.ui = Ui_MapperEditor()
         self.ui.setupUi(self)
@@ -41,6 +42,7 @@ class MapperEditorWindow(QWidget):
         self.path_to_pricebook = None
         self.sheet_tabs = {} # QWidgets representing each sheet's config
         self.mapper_config = None
+        self.is_dirty = False
     
         # LOADED SHEETS
         self.all_sheets = {} # all dataframes from file
@@ -64,14 +66,23 @@ class MapperEditorWindow(QWidget):
         self.ui.cancel_editing_button.clicked.connect(self.close)
         
     
+    def mark_as_changed(self, *args):
+        self.mapper_changed = True
+        self.setWindowTitle('"Mapper Editor *')
+    
+    
     def closeEvent(self, event):
+        if not self.mapper_changed:
+            event.accept()
+            return
+
         msg = 'Do you want to close the editor without saving?'
         
         if confirm_warning_result('Closing Mapper Editor', msg):
             event.accept()
         else:
             event.ignore()
-    
+            
     
     def reset_source_file(self):
         # clearing out xlsx data
@@ -238,6 +249,8 @@ class MapperEditorWindow(QWidget):
                             continue
 
                 new_tab = SheetTab(sheet_df, name, rule_for_sheet, self.session, self)
+                new_tab.pricebook_error.connect(self.close)
+                new_tab.setup_empty_frame()
                 self.sheet_tabs[name] = new_tab
                 self.ui.sheet_tabs.addTab(new_tab, name)
 
@@ -255,6 +268,8 @@ class MapperEditorWindow(QWidget):
             for sheet_rule in self.mapper_config.sheet_rules:
                 name = sheet_rule.sheet_name
                 new_tab = SheetTab(None, name, sheet_rule, self.session, self)
+                new_tab.pricebook_error.connect(self.close)
+                new_tab.setup_empty_frame()
                 self.sheet_tabs[name] = new_tab
                 self.ui.sheet_tabs.addTab(new_tab, name)
             
@@ -333,6 +348,7 @@ if __name__ == "__main__":
     session.test_login()
     
     window = MapperEditorWindow(session, Path('./mappers/diff-xlsx-mapper.json'))
+    
     # window = MapperEditorWindow(session, None)
     # window.auto_select_xlsx_TEST()
     window.show()
