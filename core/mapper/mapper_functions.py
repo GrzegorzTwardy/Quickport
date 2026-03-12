@@ -3,7 +3,7 @@ from exceptions.mapper_exceptions import UnknownMappingTypeError
 from core.mapper.mapper_model import ProductFieldMapping
 
 pd.set_option('future.no_silent_downcasting', True)
-mapping_functions_list = ['SET ALL', 'PRICE', 'REPLACE', 'JOIN']
+mapping_functions_list = ['SET ALL', 'PRICE', 'REPLACE', 'JOIN', 'FRAGMENT']
 
 
 # UTILITY FUNCTIONS
@@ -20,11 +20,9 @@ def price(column: pd.Series, conversion_factor: float):
     # pd.Series of validated prices (true - valid price, false - not valid)
     matches = column.astype(str).str.match(r'^\d+(\.\d{1,2})?$')
 
-    # values - [4.234234, 0.4342, NaN]
     values = pd.Series(index=column.index, dtype='float')
     values[matches] = column[matches].astype(float) * conversion_factor
 
-    # mapped [4.23, 0.43, None]
     formatted = values.map(lambda x: format(x, '.2f') if pd.notna(x) else None)
     
     invalid_mask = ~matches
@@ -67,6 +65,16 @@ def join(columns: list[pd.Series], separator: str, null_display=None):
     return values, invalid_mask
 
 
+def get_fragment(column: pd.Series, separator: str, part: int):
+    try:
+        i = part - 1
+        values = column.astype(str).str.split(separator).str[i]
+        invalid_mask = pd.Series(False, index=column.index)
+        return values, invalid_mask
+    except Exception as e:
+        return None, None
+
+
 # APPLYING MAPPINGS FROM MODEL OBJECT
 def apply_mapping_function(df, mapping: ProductFieldMapping) -> tuple[pd.Series, pd.Series]:
     
@@ -90,26 +98,36 @@ def apply_mapping_function(df, mapping: ProductFieldMapping) -> tuple[pd.Series,
             separator = args['separator']
             null_display = args.get('null_display', None)
             return join(source_columns, separator, null_display)
+        case 'FRAGMENT':
+            src_column = args['source_column']
+            separator = args['separator']
+            part = int(args['part'])
+            return get_fragment(df[src_column], separator, part)
         case _:
             raise UnknownMappingTypeError(mapping_type)
      
 
 if __name__ == '__main__':
     df = pd.DataFrame(
-        [['text1', 'v1', 0], 
-        ['text2', 'v2', 1], 
-        ['text3', 'v3', 2]], 
-        columns=['COL1', 'COL2', 'COL3']
+        [['text1', 'v1', 0, 'x-y-z'], 
+        ['text2', 'v2', 1, 'x-y-z'], 
+        ['text3', 'v3', 2, 'x-y-z']], 
+        columns=['COL1', 'COL2', 'COL3', 'COL4']
+    )
+
+    mapping = ProductFieldMapping(
+        included=True,
+        sf_target_field='test',
+        source_column='test',
+        mapping_type='FRAGMENT',
+        allows_nulls=True,
+        args={
+            'source_column': 'COL4',
+            'separator': '-',
+            'part': 2
+        }
     )
     
-    mapping = {
-        'mapping_type': 'SET ALL',
-        'args': {
-            'column': 'COL2',
-            'text': 'NEW TEXT'
-        }
-    }
-    
-    df['COL2'] = apply_mapping_function(df, mapping)
+    df['COL4'],_ = apply_mapping_function(df, mapping)
     
     print(df)

@@ -3,12 +3,14 @@ from PySide6.QtGui import QRegularExpressionValidator, QCloseEvent
 from PySide6.QtWidgets import (
     QWidget, QMessageBox, QApplication, QFormLayout,
     QLabel, QLineEdit, QGridLayout, QSizePolicy, 
-    QPushButton, QDialog, QComboBox, QFrame)
+    QPushButton, QDialog, QComboBox, QFrame, QSpinBox)
 
 from utils.convert_to_valid_price import convert_to_valid_price
 from exceptions.mapper_exceptions import UnknownMappingTypeError, MappingError
 
 class ArgDialog(QDialog):
+
+    # TODO: validate get_args_from_ui (combos cannot be empty ...)
 
     args_saved = Signal(dict)
     canceled = Signal()
@@ -88,6 +90,8 @@ class ArgDialog(QDialog):
                 self.args_widget = ReplaceArgs(self.sheet_columns, self.args_to_load, self)
             case 'JOIN':
                 self.args_widget = JoinArgs(self.sheet_columns, self.args_to_load, self)
+            case 'FRAGMENT':
+                self.args_widget = FragmentArgs(self.sheet_columns, self.args_to_load, self)
             case _:
                 raise UnknownMappingTypeError(f'Uknown mapping type: "{self.mapping_type}"')
         self.layout.addWidget(self.args_widget, 0, 0, 1, 2)
@@ -532,7 +536,52 @@ class JoinArgs(QWidget):
             'null_display': null_display
         }
 
+
+class FragmentArgs(QWidget):
+
+    def __init__(self, sheet_columns: list[str], args: dict | None, parent):
+        super().__init__(parent)
+
+        self.layout = QFormLayout(self)
+        self.layout.setLabelAlignment(Qt.AlignRight)
         
+        self.src_column_label = QLabel(self)
+        self.src_column_label.setText('source column: ')
+        
+        self.src_col_combo = QComboBox(self)
+        setup_src_column_combo(sheet_columns, self.src_col_combo)
+        stylize_combo(self.src_col_combo)
+
+        self.sep_label = QLabel(self)
+        self.sep_label.setText('separator: ')
+
+        self.sep_le = QLineEdit(self)
+        
+        self.part_label = QLabel(self)
+        self.part_label.setText('part (number):')
+
+        self.part_spinbox = QSpinBox(self)
+        self.part_spinbox.setMinimum(1)
+
+        self.layout.addRow(self.src_column_label, self.src_col_combo)
+        self.layout.addRow(self.sep_label, self.sep_le)
+        self.layout.addRow(self.part_label, self.part_spinbox)
+        
+        if args:
+            self.fill_ui(args)
+        
+    
+    def fill_ui(self, args: dict):
+        # self.text_le.setText(args.get('text', ''))
+        pass
+
+
+    def get_args_from_ui(self):
+        # TODO: add validation of combo
+        return {
+            'source_column': self.src_col_combo.currentData(),
+        }
+
         
 if __name__ == "__main__":
     import sys
