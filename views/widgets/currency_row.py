@@ -1,4 +1,4 @@
-from PySide6.QtCore import (Qt, QLocale, QRegularExpression)
+from PySide6.QtCore import (Qt, Signal, QRegularExpression)
 from PySide6.QtGui import QDoubleValidator, QRegularExpressionValidator
 from PySide6.QtWidgets import (
     QLabel, QGridLayout, QWidget, QComboBox, QLineEdit, QSizePolicy
@@ -9,6 +9,8 @@ from utils.convert_to_valid_price import convert_to_valid_price
 from exceptions.gui_exceptions import MappingNotSetError
 
 class CurrencyRow(QWidget):
+
+    row_changed = Signal()
 
     def __init__(
         self, 
@@ -84,6 +86,10 @@ class CurrencyRow(QWidget):
         layout.setColumnStretch(1, 2)
         layout.setColumnStretch(2, 2)
         
+        # signaling changes
+        self.curr_field_combo.currentIndexChanged.connect(lambda *args: self.row_changed.emit())
+        self.c_factor_ledit.editingFinished.connect(lambda *args: self.row_changed.emit())
+
         if self.currency_mapping is not None:
             self.load_mapping()
 

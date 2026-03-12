@@ -25,6 +25,7 @@ from core.mapper.mapper_engine import transform_data_for_preview
 class SheetTab(QWidget):
     
     pricebook_error = Signal()
+    sheet_changed = Signal()
     
     def __init__(self, df: pd.DataFrame | None, sheet_name: str, sheet_rule: SheetRule | None, session: AppSession, parent=None):
         super().__init__()
@@ -110,7 +111,7 @@ class SheetTab(QWidget):
                 '\n'.join(f'- ID: {pid}' for pid in missing_ids)
             )
             QMessageBox.warning(self, 'Invalid Mapper Data', msg_text)
-            self.pricebook_error.emit()    
+            # self.pricebook_error.emit()  
 
 
     def setup_pricebook_sorting(self):        
@@ -196,6 +197,7 @@ class SheetTab(QWidget):
             )
             
             row.config_changed.connect(self.schedule_preview_update)
+            row.config_changed.connect(lambda *args: self.sheet_changed.emit())
 
             self.product2_rows[field_name] = row
             add_row_to_grid(grid, row, self.next_prod2_row_id)
@@ -213,6 +215,7 @@ class SheetTab(QWidget):
             )
 
             row.config_changed.connect(self.schedule_preview_update)
+            row.config_changed.connect(lambda *args: self.sheet_changed.emit())
 
             self.product2_rows[field_name] = row
             add_row_to_grid(grid, row, self.next_prod2_row_id)   
@@ -275,7 +278,8 @@ class SheetTab(QWidget):
                 available_currencies=valid_available_currencies, 
                 columns=available_cols,
                 pricebook_config=specific_config
-            )     
+            )
+            tab.tab_changed.connect(lambda *args: self.sheet_changed.emit())
             self.all_currency_tabs[f'{pb_id}'] = tab
             
     

@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import (QApplication, QWidget, QFileDialog, QMessageBox)
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import Signal, Qt
+from PySide6.QtCore import Signal, Qt, QTimer
 
 import os
 import json
@@ -32,7 +32,6 @@ class MapperEditorWindow(QWidget):
         self.setAttribute(Qt.WA_DeleteOnClose)
         session.validate()
         self.session = session
-        self.session.sf_metadata.pricebooks = {}
         
         self.ui = Ui_MapperEditor()
         self.ui.setupUi(self)
@@ -43,10 +42,21 @@ class MapperEditorWindow(QWidget):
         self.sheet_tabs = {} # QWidgets representing each sheet's config
         self.mapper_config = None
         self.is_dirty = False
-    
+
+                
         # LOADED SHEETS
         self.all_sheets = {} # all dataframes from file
         self.sheets = {} # selected dataframes by user
+
+        # validating available pricebooks
+        if not self.session.sf_metadata.pricebooks:
+            MessageHandler.show_error(
+                self, 
+                'Critical Error', 
+                'Salesforce environment assigned to this account does not have any custom pricebooks'
+            )
+            QTimer.singleShot(0, self.close)
+            return
 
         self._connect_signals()
         
@@ -66,13 +76,13 @@ class MapperEditorWindow(QWidget):
         self.ui.cancel_editing_button.clicked.connect(self.close)
         
     
-    def mark_as_changed(self, *args):
-        self.mapper_changed = True
-        self.setWindowTitle('"Mapper Editor *')
+    def mark_as_changed(self):
+        self.is_dirty = True
+        self.setWindowTitle('Mapper Editor *')
     
     
     def closeEvent(self, event):
-        if not self.mapper_changed:
+        if not self.is_dirty:
             event.accept()
             return
 
@@ -249,7 +259,7 @@ class MapperEditorWindow(QWidget):
                             continue
 
                 new_tab = SheetTab(sheet_df, name, rule_for_sheet, self.session, self)
-                new_tab.pricebook_error.connect(self.close)
+                new_tab.sheet_changed.connect(self.mark_as_changed)
                 new_tab.setup_empty_frame()
                 self.sheet_tabs[name] = new_tab
                 self.ui.sheet_tabs.addTab(new_tab, name)
@@ -268,7 +278,7 @@ class MapperEditorWindow(QWidget):
             for sheet_rule in self.mapper_config.sheet_rules:
                 name = sheet_rule.sheet_name
                 new_tab = SheetTab(None, name, sheet_rule, self.session, self)
-                new_tab.pricebook_error.connect(self.close)
+                new_tab.sheet_changed.connect(self.mark_as_changed)
                 new_tab.setup_empty_frame()
                 self.sheet_tabs[name] = new_tab
                 self.ui.sheet_tabs.addTab(new_tab, name)

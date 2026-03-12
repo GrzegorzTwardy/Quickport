@@ -1,4 +1,4 @@
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (QLabel, QGridLayout, QWidget, QScrollArea, QFrame, QPushButton, QMessageBox, QSizePolicy)
 
 from views.widgets.currency_row import CurrencyRow
@@ -9,6 +9,8 @@ from core.mapper.mapper_model import PricebookConfig, CurrencyMapping
 
 class CurrencyTab(QWidget):
     
+    tab_changed = Signal()
+
     def __init__(
         self, 
         tab_id: int, 
@@ -76,6 +78,7 @@ class CurrencyTab(QWidget):
                     parent=self.frame, 
                     parent_layout=self.frame_layout
                 )
+                row_widget.row_changed.connect(lambda *args: self.tab_changed.emit())
                 self.frame_layout.addWidget(row_widget, row_index, 0, 1, 4)
                 
                 if i == 0:
@@ -91,6 +94,7 @@ class CurrencyTab(QWidget):
                     self.add_btn.setEnabled(False)
                     
             self.update_remove_button_state()
+            self.tab_changed.emit()
 
     
     def remove_currencies(self):
@@ -125,6 +129,7 @@ class CurrencyTab(QWidget):
         
         self.add_btn.setEnabled(bool(self._available_currencies))
         self.update_remove_button_state()
+        self.tab_changed.emit()
     
     # DTO
     def get_pricebook_config(self, pb_id: str) -> PricebookConfig:
