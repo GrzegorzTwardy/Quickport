@@ -6,6 +6,7 @@ from PySide6.QtWidgets import (
     QPushButton, QDialog, QComboBox, QFrame, QSpinBox)
 
 from utils.convert_to_valid_price import convert_to_valid_price
+from utils.message_handler import MessageHandler
 from exceptions.mapper_exceptions import UnknownMappingTypeError, MappingError
 
 class ArgDialog(QDialog):
@@ -74,6 +75,11 @@ class ArgDialog(QDialog):
             
             
     def get_args_dict(self) -> dict:
+        # TODO: remove the first if statement
+        if hasattr(self.args_widget, 'validate_inputs'):
+            if not self.args_widget.validate_inputs():
+                return
+
         self.args = self.args_widget.get_args_from_ui()
         self.args_saved.emit(self.args)
         self.saved = True
@@ -572,14 +578,33 @@ class FragmentArgs(QWidget):
         
     
     def fill_ui(self, args: dict):
-        # self.text_le.setText(args.get('text', ''))
-        pass
+        try:
+            set_combo_index(self.src_col_combo, args.get('source_column', ''))
+            self.sep_le.setText(args.get('separator', ''))
+            self.part_spinbox.setValue(int(args.get('part', 1)))
+        except Exception as e:
+            print(f'Config Error: {e}')
+
+
+    def validate_inputs(self) -> bool:
+        separator = self.sep_le.text()
+
+        if separator == '':
+            MessageHandler.show_warning(
+                self,
+                'Invalid Input',
+                'Please enter separator character.'
+            )
+            return False
+        return True
 
 
     def get_args_from_ui(self):
-        # TODO: add validation of combo
+
         return {
             'source_column': self.src_col_combo.currentData(),
+            'separator': self.sep_le.text(),
+            'part': self.part_spinbox.value()
         }
 
         
