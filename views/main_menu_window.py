@@ -5,7 +5,6 @@ from dtos.sf_metadata import SfMetadata
 from PySide6.QtWidgets import (QMainWindow, QListWidgetItem, QFileDialog, QMessageBox)
 from PySide6.QtCore import Qt, Slot
 
-from salesforce_api.authenticator import Authenticator
 from salesforce_api.salesforce_api import SalesforceApi
 from exceptions.global_exceptions import *
 from ui.ui_main_menu import Ui_MainMenu

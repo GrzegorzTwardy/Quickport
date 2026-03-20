@@ -25,7 +25,7 @@ class AppSession(QObject):
         
     def validate(self):
         if not self.sf_metadata:
-            raise SalesforceDataMissingError('Couldn\'t load data from Salesforce')
+            raise SalesforceDataMissingError('Some data is missing from Salesforce.')
 
         checks = [
             ('product2_fields', 'Product2'),

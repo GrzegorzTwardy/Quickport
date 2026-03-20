@@ -21,7 +21,11 @@ PREVIEW_MAX_ROWS = 50
 class MapperEngine:
 
     def __init__(self, pricebook_path: Path | str, mapper_path: Path | str, session: AppSession):
-        session.validate()
+        try:
+            session.validate()
+        except SalesforceDataMissingError as e:
+            raise Exception(str(e))
+        
         self.session = session
         
         self.pricebooks: dict[str, pd.DataFrame] = get_sheets_from_file(pricebook_path)

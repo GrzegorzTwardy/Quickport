@@ -19,6 +19,7 @@ from views.widgets.dialog_boxes.column_mapping_dialog import ColumnMappingDialog
 from core.mapper.mapper_model import MapperModel, SheetRule
 from dtos.session import AppSession
 from exceptions.gui_exceptions import MappingNotSetError
+from exceptions.global_exceptions import *
 
 
 class MapperEditorWindow(QWidget):
@@ -30,7 +31,12 @@ class MapperEditorWindow(QWidget):
     def __init__(self, session: AppSession, mapper_path=None):
         super().__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
-        session.validate()
+        
+        try:
+            session.validate()
+        except SalesforceDataMissingError as e:
+            MessageHandler.show_error(self, 'Session Error', str(e))
+        
         self.session = session
         
         self.ui = Ui_MapperEditor()
@@ -356,6 +362,7 @@ if __name__ == "__main__":
     app = QApplication(sys.argv)
     session = AppSession()
     session.test_login()
+    session.sf_metadata = None
     
     window = MapperEditorWindow(session, Path('./mappers/diff-xlsx-mapper.json'))
     
