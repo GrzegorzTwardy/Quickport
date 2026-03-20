@@ -11,6 +11,7 @@ class SalesforceExportWorker(QThread):
     update_label = Signal(str)
     update_progress_bar = Signal(int, int) # max_value, value
     finished_success = Signal()
+    finished_warning = Signal(str)
     finished_error = Signal(str)
     
     
@@ -56,17 +57,22 @@ class SalesforceExportWorker(QThread):
                 
                 pb_name = Path(self.pricebook_path).stem
                 errors.extend(self.sf_api.execution_errors)
+                
                 if len(errors) > 0:
                     
                     self.update_label.emit('Saving faulty records...')
                     
                     Path(f'./output/invalid_data/').mkdir(parents=True, exist_ok=True)
-                    dict_to_xlsx(errors, f'./output/invalid_data/invalid-rows-{pb_name}.xlsx', True)
-                        
-                self.update_label.emit('Finished.')
-                self.update_progress_bar.emit(1, 1)
-                
-                self.finished_success.emit()
+                    error_file = f'./output/invalid_data/invalid-rows-{pb_name}.xlsx'
+                    dict_to_xlsx(errors, error_file, True)
+                    
+                    self.update_label.emit('Finished.')
+                    self.update_progress_bar.emit(1, 1)
+                    self.finished_warning.emit(f'Data exported partially. Faulty records saved in file:\n{error_file}')
+                else:
+                    self.update_label.emit('Finished.')
+                    self.update_progress_bar.emit(1, 1)
+                    self.finished_success.emit()
             else:
                 
                 self.update_label.emit('Finished.')

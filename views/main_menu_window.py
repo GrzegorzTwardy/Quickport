@@ -5,7 +5,6 @@ from dtos.sf_metadata import SfMetadata
 from PySide6.QtWidgets import (QMainWindow, QListWidgetItem, QFileDialog, QMessageBox)
 from PySide6.QtCore import Qt, Slot
 
-from core.mapper.mapper_engine import MapperEngine
 from salesforce_api.authenticator import Authenticator
 from salesforce_api.salesforce_api import SalesforceApi
 from exceptions.global_exceptions import *
@@ -154,6 +153,7 @@ class MainMenuWindow(QMainWindow):
         self.worker.update_progress_bar.connect(self.update_progress_bar)
         self.worker.finished_success.connect(self.diplay_success_msg)
         self.worker.finished_error.connect(self.display_failure_msg)
+        self.worker.finished_warning.connect(self.display_warning_msg)
         
         self.worker.start()
         
@@ -178,7 +178,13 @@ class MainMenuWindow(QMainWindow):
     def display_failure_msg(self, msg: str):
         self.progress_dialog.close()
         self.worker = None
-        MessageHandler.show_info(self, 'Salesforce Export', f"Error:\n'{msg}'")
+        MessageHandler.show_error(self, 'Salesforce Export', f"Error:\n'{msg}'")
+        
+    @Slot(str)
+    def display_warning_msg(self, msg: str):
+        self.progress_dialog.close()
+        self.worker = None
+        MessageHandler.show_error(self, 'Salesforce Export', msg)
     # ===========================
         
     
