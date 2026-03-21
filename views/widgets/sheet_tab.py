@@ -19,6 +19,7 @@ from dtos.session import AppSession
 
 from core.mapper.mapper_model import SheetRule, PricebookConfig, ProductFieldMapping
 from core.mapper.mapper_engine import transform_data_for_preview
+from core.settings.settings_manager import settings_manager
 
 # TODO: 
 # - walidacja sf_fields przy edycji za pomocą self.session (aktualne) i sf_target_field (sheet_rule)
@@ -57,8 +58,11 @@ class SheetTab(QWidget):
         self.preview_timer.setInterval(400)
         self.preview_timer.timeout.connect(self.load_product_preview)
         
-        # self.setup_empty_frame()
-        
+
+    @property
+    def max_table_records(self):
+        return settings_manager.get_setting('max_table_records')
+
 
     def make_session(self):
         from dtos.session import AppSession
@@ -301,7 +305,7 @@ class SheetTab(QWidget):
     def create_table_tabs(self):
         # product2-preview, 'filename'.xlsx
         if self.df is not None:
-            file_preview_df = self.df.head(50)
+            file_preview_df = self.df.head(self.max_table_records)
             file_preview_table = TableTab(self.sheet_name, file_preview_df)
             
             # empty Product2 Preview table with headers (Salesforce Prod2 field names)

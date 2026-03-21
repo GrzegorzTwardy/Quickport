@@ -2,25 +2,22 @@ import json
 from pathlib import Path
 from dtos.session import AppSession
 from dtos.sf_metadata import SfMetadata
-from PySide6.QtWidgets import (QMainWindow, QListWidgetItem, QFileDialog, QMessageBox)
+from PySide6.QtWidgets import (QMainWindow, QListWidgetItem, QFileDialog)
 from PySide6.QtCore import Qt, Slot
 
-from salesforce_api.salesforce_api import SalesforceApi
+from core.settings.settings_manager import settings_manager
 from exceptions.global_exceptions import *
 from ui.ui_main_menu import Ui_MainMenu
-from utils.xlsx_manager import dict_to_xlsx
-from dtos.credentials import Credentials
 
 from views.mapper_list_window import MapperListWindow
 from views.profile_manager_window import ProfileManagerWindow
 from views.widgets.progress_bar_dialog import ProgressBarDialog
+from views.widgets.dialog_boxes.settings_dialog import SettingsDialog
 from utils.message_handler import MessageHandler
 from thread_workers.sf_export_worker import SalesforceExportWorker
 
 
 class MainMenuWindow(QMainWindow):
-    
-    PATH_TO_MAPPERS = Path('./mappers/')
     
     def __init__(self):
         super().__init__()
@@ -40,6 +37,9 @@ class MainMenuWindow(QMainWindow):
         
         self._connect_signals()
         
+    @property
+    def path_to_mappers(self):
+        return settings_manager.get_setting('mappers_path')
     
     def test_login(self):
         pass
@@ -51,6 +51,12 @@ class MainMenuWindow(QMainWindow):
         self.ui.chooseFileButton.clicked.connect(self.open_file_dialog)
         self.ui.loadToSfButton.clicked.connect(self.load_data_to_Sf)
         self.ui.profilesButton.clicked.connect(self.open_profile_manager)
+        self.ui.actionSettings.triggered.connect(self.open_settings_dialog)
+    
+    
+    def open_settings_dialog(self):
+        dialog = SettingsDialog(self)
+        dialog.show()
     
     
     def open_profile_manager(self):
@@ -97,7 +103,7 @@ class MainMenuWindow(QMainWindow):
     def load_mappers(self):
         self.ui.mapperList.clear()
         
-        for json_file in self.PATH_TO_MAPPERS.glob('*.json'):
+        for json_file in Path(self.path_to_mappers).glob('*.json'):
             with open(json_file, 'r', encoding='utf-8') as mapper_file:
                 mapper = json.load(mapper_file)
 
@@ -185,7 +191,6 @@ class MainMenuWindow(QMainWindow):
         self.worker = None
         MessageHandler.show_error(self, 'Salesforce Export', msg)
     # ===========================
-        
     
     
 if __name__ == "__main__":

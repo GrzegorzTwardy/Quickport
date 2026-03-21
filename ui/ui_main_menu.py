@@ -33,8 +33,8 @@ class Ui_MainMenu(object):
         MainMenu.setSizePolicy(sizePolicy)
         self.actionShowInfo = QAction(MainMenu)
         self.actionShowInfo.setObjectName(u"actionShowInfo")
-        self.actionLanguage = QAction(MainMenu)
-        self.actionLanguage.setObjectName(u"actionLanguage")
+        self.actionSettings = QAction(MainMenu)
+        self.actionSettings.setObjectName(u"actionSettings")
         self.centralwidget = QWidget(MainMenu)
         self.centralwidget.setObjectName(u"centralwidget")
         self.gridLayout_3 = QGridLayout(self.centralwidget)
@@ -169,17 +169,14 @@ class Ui_MainMenu(object):
         self.menubar.setGeometry(QRect(0, 0, 422, 33))
         self.menuOptions = QMenu(self.menubar)
         self.menuOptions.setObjectName(u"menuOptions")
-        self.menuInfo = QMenu(self.menubar)
-        self.menuInfo.setObjectName(u"menuInfo")
         MainMenu.setMenuBar(self.menubar)
         self.statusbar = QStatusBar(MainMenu)
         self.statusbar.setObjectName(u"statusbar")
         MainMenu.setStatusBar(self.statusbar)
 
         self.menubar.addAction(self.menuOptions.menuAction())
-        self.menubar.addAction(self.menuInfo.menuAction())
-        self.menuOptions.addAction(self.actionLanguage)
-        self.menuInfo.addAction(self.actionShowInfo)
+        self.menuOptions.addAction(self.actionSettings)
+        self.menuOptions.addAction(self.actionShowInfo)
 
         self.retranslateUi(MainMenu)
 
@@ -187,9 +184,9 @@ class Ui_MainMenu(object):
     # setupUi
 
     def retranslateUi(self, MainMenu):
-        MainMenu.setWindowTitle(QCoreApplication.translate("MainMenu", u"SF Price List Importer", None))
-        self.actionShowInfo.setText(QCoreApplication.translate("MainMenu", u"Show Info", None))
-        self.actionLanguage.setText(QCoreApplication.translate("MainMenu", u"Language", None))
+        MainMenu.setWindowTitle(QCoreApplication.translate("MainMenu", u"Quickport", None))
+        self.actionShowInfo.setText(QCoreApplication.translate("MainMenu", u"About", None))
+        self.actionSettings.setText(QCoreApplication.translate("MainMenu", u"Settings", None))
         self.profilesButton.setText(QCoreApplication.translate("MainMenu", u"Profiles", None))
         self.mappersButton.setText(QCoreApplication.translate("MainMenu", u"Mappers", None))
         self.loggedAsLabel.setText(QCoreApplication.translate("MainMenu", u"Logged as:", None))
@@ -201,6 +198,5 @@ class Ui_MainMenu(object):
         self.exportCsvButton.setText(QCoreApplication.translate("MainMenu", u"Export CSV", None))
         self.loadToSfButton.setText(QCoreApplication.translate("MainMenu", u"Load to SF", None))
         self.menuOptions.setTitle(QCoreApplication.translate("MainMenu", u"Options", None))
-        self.menuInfo.setTitle(QCoreApplication.translate("MainMenu", u"Info", None))
     # retranslateUi
 

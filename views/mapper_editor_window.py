@@ -17,6 +17,7 @@ from views.widgets.dialog_boxes.confirm_warning_dialog import confirm_warning_re
 from views.widgets.dialog_boxes.column_mapping_dialog import ColumnMappingDialog
 
 from core.mapper.mapper_model import MapperModel, SheetRule
+from core.settings.settings_manager import settings_manager
 from dtos.session import AppSession
 from exceptions.gui_exceptions import MappingNotSetError
 from exceptions.global_exceptions import *
@@ -26,28 +27,28 @@ class MapperEditorWindow(QWidget):
     
     refresh_mapper_list = Signal()
     
-    PATH_TO_MAPPERS = Path('./mappers/')
-    
     def __init__(self, session: AppSession, mapper_path=None):
         super().__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
-        
-        try:
-            session.validate()
-        except SalesforceDataMissingError as e:
-            MessageHandler.show_error(self, 'Session Error', str(e))
-        
-        self.session = session
-        
-        self.ui = Ui_MapperEditor()
-        self.ui.setupUi(self)
-        self.setWindowIcon(QIcon())
         
         # GLOBAL VALUES
         self.path_to_pricebook = None
         self.sheet_tabs = {} # QWidgets representing each sheet's config
         self.mapper_config = None
         self.is_dirty = False
+        
+        try:
+            session.validate()
+        except SalesforceDataMissingError as e:
+            MessageHandler.show_error(self, 'Session Error', str(e))
+            QTimer.singleShot(0, self.close)
+            return
+        
+        self.session = session
+        
+        self.ui = Ui_MapperEditor()
+        self.ui.setupUi(self)
+        self.setWindowIcon(QIcon())
 
                 
         # LOADED SHEETS
@@ -69,12 +70,22 @@ class MapperEditorWindow(QWidget):
         # ==== EDITING EXISTING MAPPER LOGIC ====
         if mapper_path:
             self.mapper_config = self.load_mapper_file(mapper_path)
+            
+            if self.mapper_config is None:
+                QTimer.singleShot(0, self.close)
+                return
+            
             self.ui.mapper_name_line_edit.setText(self.mapper_config.name)
             self.add_sheet_tabs()
             self.ui.save_mapper_button.setEnabled(True)
         
         self.ui.mapper_name_line_edit.setFocus()
-        
+    
+    
+    @property
+    def path_to_mappers(self):
+        return settings_manager.get_setting('mappers_path')
+    
 
     def _connect_signals(self):
         self.ui.choose_file_button.clicked.connect(self.open_file_dialog)
@@ -331,7 +342,7 @@ class MapperEditorWindow(QWidget):
             )
             
             # saving mapper
-            path_to_file = Path(self.PATH_TO_MAPPERS) / f"{mapper.name}.json"
+            path_to_file = Path(self.path_to_mappers) / f"{mapper.name}.json"
             should_save = True
 
             if path_to_file.exists():

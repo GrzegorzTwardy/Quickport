@@ -5,14 +5,13 @@ from PySide6.QtCore import Qt
 import json
 from pathlib import Path
 
+from core.settings.settings_manager import settings_manager
 from views.mapper_editor_window import MapperEditorWindow
 from ui.ui_mapper_list import Ui_MapperListMain
 from dtos.session import AppSession
 
 
 class MapperListWindow(QWidget):
-    
-    PATH_TO_MAPPERS = Path('./mappers/')
     
     def __init__(self, session: AppSession):
         super().__init__()
@@ -35,6 +34,11 @@ class MapperListWindow(QWidget):
         self.load_mappers()
         
     
+    @property
+    def path_to_mappers(self):
+        return settings_manager.get_setting('mappers_path')
+    
+    
     def _connect_signals(self):
         self.ui.mapperList.currentRowChanged.connect(self.on_item_selected)
         self.ui.addButton.clicked.connect(self.add_new_mapper)
@@ -53,7 +57,7 @@ class MapperListWindow(QWidget):
     def load_mappers(self):
         self.ui.mapperList.clear()
         
-        for json_file in self.PATH_TO_MAPPERS.glob('*.json'):
+        for json_file in Path(self.path_to_mappers).glob('*.json'):
             with open(json_file, 'r', encoding='utf-8') as mapper_file:
                 mapper = json.load(mapper_file)
 

@@ -1,0 +1,30 @@
+[
+    {
+        "uid": "1111-2222",
+        "name": "Projekt ABC",
+        "production_client_id": "3MVG9_ProdKlucz...",
+        "sandbox_client_id": "3MVG9_SandboxKlucz...",
+        "desc": "sfghsnob54yn86o9hybmj8u5b9p546u"
+    },
+    {
+        "uid": "3333-4444",
+        "name": "Wewn\u0119trzny Org Dev",
+        "production_client_id": "3MVG9_DevKlucz...",
+        "sandbox_client_id": "",
+        "desc": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+        "uid": "333233-4444",
+        "name": "Do usuni\u0119cia",
+        "production_client_id": "3MVG9_DevKlucz...",
+        "sandbox_client_id": "",
+        "desc": "4t5t54g4gf3wfw34324324324"
+    },
+    {
+        "uid": "44ef8035-ca14-41f5-b64a-880e3cf5eee8",
+        "name": "Test Trailblaze Playground",
+        "production_client_id": "3MVG9YFqzc_KnL.zP4xDXrq_EmgXWyf0hdCUgCi1fEcFg.GDfYOIC__TDQmQIRDjOMay96.sWNCCKkiq2ECIJ",
+        "sandbox_client_id": "",
+        "desc": "test environment"
+    }
+]

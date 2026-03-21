@@ -1,6 +1,8 @@
 from pathlib import Path
+from datetime import date
 from PySide6.QtCore import QThread, Signal, Qt
 from core.mapper.mapper_engine import MapperEngine
+from core.settings.settings_manager import settings_manager
 from utils.xlsx_manager import dict_to_xlsx
 from dtos.session import AppSession
 from salesforce_api.salesforce_api import SalesforceApi
@@ -8,6 +10,7 @@ from salesforce_api.salesforce_api import SalesforceApi
 
 class SalesforceExportWorker(QThread):
     
+    OUTPUT_PATH = settings_manager.get_setting('output_path')
     update_label = Signal(str)
     update_progress_bar = Signal(int, int) # max_value, value
     finished_success = Signal()
@@ -62,8 +65,9 @@ class SalesforceExportWorker(QThread):
                     
                     self.update_label.emit('Saving faulty records...')
                     
-                    Path(f'./output/invalid_data/').mkdir(parents=True, exist_ok=True)
-                    error_file = f'./output/invalid_data/invalid-rows-{pb_name}.xlsx'
+                    # TODO: MOVE THIS TO app.py
+                    Path(self.OUTPUT_PATH).mkdir(parents=True, exist_ok=True)
+                    error_file = Path(self.OUTPUT_PATH) / f'{date.today().isoformat()}_{pb_name}_invalid_records.xlsx'
                     dict_to_xlsx(errors, error_file, True)
                     
                     self.update_label.emit('Finished.')

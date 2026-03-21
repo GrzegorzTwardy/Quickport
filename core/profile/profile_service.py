@@ -1,36 +1,28 @@
 import json
 from pathlib import Path
 from core.profile.profile_model import Profile
-from core.mapper.mapper_model import MapperModel
+from core.settings.settings_manager import settings_manager
 
 
 class ProfileService:
     
-    PATH_TO_PROFILES = Path('./settings.json')
+    PATH_TO_PROFILES = settings_manager.get_setting('profiles_file_path')
 
     def __init__(self):
-        self.settings = None
-        self.profiles = []
+        self.profiles: list[Profile] = []
         self.profiles_empty = True
 
-        with open(self.PATH_TO_PROFILES, 'r', encoding='utf-8') as settings_file:
-            self.settings = json.load(settings_file)
-
-        if not self.settings:
-            raise FileNotFoundError('Missing settings file.')
-
-        profiles_data = self.settings.get('profiles', [])
-        self.profiles: list[Profile] = [Profile.from_dict(profile) for profile in profiles_data]
+        with open(self.PATH_TO_PROFILES, 'r', encoding='utf-8') as file:
+            data = json.load(file)
+            self.profiles = [Profile.from_dict(p) for p in data]
 
         if len(self.profiles) != 0:
             self.profiles_empty = False
 
     
-    def _save_to_file(self):
-        self.settings['profiles'] = [profile.to_dict() for profile in self.profiles]
-        
+    def _save_to_file(self):   
         with open(self.PATH_TO_PROFILES, 'w', encoding='utf-8') as file:
-            json.dump(self.settings, file, indent=4)
+            json.dump([profile.to_dict() for profile in self.profiles], file, indent=4)
     
     
     def get_profile_by_name(self, name: str) -> Profile | None:
@@ -51,7 +43,6 @@ class ProfileService:
         sandbox_client_id: str | None,
         desc: str
     ):
-        # check if name is not already taken
         for profile in self.profiles:
             if profile.name == name:
                 raise ValueError(f"Profile with the name '{name}' already exists.")
@@ -78,7 +69,6 @@ class ProfileService:
         target_profile = None
         
         for profile in self.profiles:
-            # if new profile name is already taken with exception to the profile that is being edited (initially it must have the same name)
             if profile.name == name and name != target_profile_name:
                 raise ValueError(f"Profile with the name '{name}' already exists.")
             if profile.name == target_profile_name:
@@ -106,6 +96,10 @@ class ProfileService:
         if target_profile:
             self.profiles.remove(target_profile)
             self._save_to_file()
+            
+            if len(self.profiles) == 0:
+                self.profiles_empty = True
+                
             return True
         
         return False
@@ -114,10 +108,17 @@ class ProfileService:
 if __name__ == '__main__':
     prof_service = ProfileService()
 
+    # prof_service.add_new_profile(
+    #     name='Test Trailblaze Playground',
+    #     production_client_id='3MVG9YFqzc_KnL.zP4xDXrq_EmgXWyf0hdCUgCi1fEcFg.GDfYOIC__TDQmQIRDjOMay96.sWNCCKkiq2ECIJ',
+    #     sandbox_client_id='',
+    #     mappers=[],
+    #     desc='test environment'
+    # )
+    
     prof_service.add_new_profile(
-        name='Test Trailblaze Playground',
-        production_client_id='3MVG9YFqzc_KnL.zP4xDXrq_EmgXWyf0hdCUgCi1fEcFg.GDfYOIC__TDQmQIRDjOMay96.sWNCCKkiq2ECIJ',
-        sandbox_client_id='',
-        mappers=[],
-        desc='test environment'
+        name='1111111111111111',
+        production_client_id='weqwe',
+        sandbox_client_id='4324',
+        desc='23432324'
     )

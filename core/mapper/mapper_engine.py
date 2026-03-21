@@ -6,6 +6,7 @@ from pathlib import Path
 from core.mapper.mapper_model import MapperModel, ProductFieldMapping, PricebookConfig, CurrencyMapping
 from utils.xlsx_manager import get_sheets_from_file
 from core.mapper.mapper_functions import apply_mapping_function
+from core.settings.settings_manager import settings_manager
 
 from dtos.session import AppSession
 
@@ -16,7 +17,6 @@ from exceptions.global_exceptions import *
 # IMPORTANT: We assume that the ProductCode is a required and unique field of the object in Salesforce
 # and the following functions operate based on it - the absence of this field results in an error
 
-PREVIEW_MAX_ROWS = 50
 
 class MapperEngine:
 
@@ -230,7 +230,8 @@ class MapperEngine:
     
     
 def transform_data_for_preview(sheet_df: pd.DataFrame, prod2_mappings: list[ProductFieldMapping]) -> pd.DataFrame:
-    sheet_df = sheet_df.head(PREVIEW_MAX_ROWS)
+    preview_max_rows = settings_manager.get_setting('max_table_records')
+    sheet_df = sheet_df.head(preview_max_rows)
     
     def raw_column(column: pd.Series):
         values = column.copy()
