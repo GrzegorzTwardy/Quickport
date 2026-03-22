@@ -2,6 +2,7 @@
 import os
 import json
 from pathlib import Path
+from exceptions.global_exceptions import *
 
 default_values = {
     'mappers_path': './mappers/', # shouldn't be changed
@@ -23,7 +24,28 @@ class SettingsManager:
         with open(self.path, 'w', encoding='utf-8') as file:
             json.dump(self.settings, file, indent=4)
      
-     
+    
+    def _ensure_paths_exist(self):
+        directories_to_check = ['mappers_path', 'output_path']
+        for dir_name in directories_to_check:
+            dir_path = Path(self.get_setting(dir_name))
+            if not dir_path.exists():
+                try:
+                    dir_path.mkdir(parents=True, exist_ok=True)
+                except Exception as e:
+                    raise SettingsError(f'Critical error: Cannot create directory {dir_path}. Reason:\n{e}')
+        
+        profiles_path = Path(self.get_setting('profiles_file_path'))
+        if not profiles_path.exists():
+            try:
+                profiles_path.parent.mkdir(parents=True, exist_ok=True)
+                
+                with open(profiles_path, 'w', encoding='utf-8') as file:
+                    json.dump([], file, indent=4)
+            except Exception as e:
+                raise SettingsError(f'Critical error: Cannot create file {profiles_path}. Reason:\n{e}')
+    
+    
     def load_settings(self):
         try:
             if os.path.exists(self.path) and os.path.getsize(self.path) > 0:
@@ -39,6 +61,8 @@ class SettingsManager:
 
         except (json.JSONDecodeError, FileNotFoundError, ValueError):
             self._save_settings()
+            
+        self._ensure_paths_exist()
      
             
     def _save_settings(self):

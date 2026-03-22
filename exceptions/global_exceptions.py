@@ -8,3 +8,7 @@ class SalesforceDataMissingError(Exception):
 
 class ProfileNotFoundError(Exception):
     pass
+
+
+class SettingsError(Exception):
+    pass
