@@ -1,5 +1,5 @@
 from pathlib import Path
-from datetime import date
+from datetime import datetime
 from PySide6.QtCore import QThread, Signal, Qt
 from core.mapper.mapper_engine import MapperEngine
 from core.settings.settings_manager import settings_manager
@@ -10,7 +10,6 @@ from salesforce_api.salesforce_api import SalesforceApi
 
 class SalesforceExportWorker(QThread):
     
-    OUTPUT_PATH = settings_manager.get_setting('output_path')
     update_label = Signal(str)
     update_progress_bar = Signal(int, int) # max_value, value
     finished_success = Signal()
@@ -31,6 +30,11 @@ class SalesforceExportWorker(QThread):
         self.session = session
         self.sf_api = sf_api
         
+    
+    @property
+    def output_path(self):
+        return settings_manager.get_setting('output_path')
+    
         
     def run(self):
         errors = []
@@ -54,7 +58,7 @@ class SalesforceExportWorker(QThread):
             
             if total_success > 0:
                 
-                self.update_label.emit('Loading entries to pricebooks(s)...')
+                self.update_label.emit('Loading entries to pricebook(s)...')
                 
                 self.sf_api.load_pricebook_entry(pb_entry_df)
                 
@@ -65,14 +69,13 @@ class SalesforceExportWorker(QThread):
                     
                     self.update_label.emit('Saving faulty records...')
                     
-                    # TODO: MOVE THIS TO app.py
-                    Path(self.OUTPUT_PATH).mkdir(parents=True, exist_ok=True)
-                    error_file = Path(self.OUTPUT_PATH) / f'{date.today().isoformat()}_{pb_name}_invalid_records.xlsx'
+                    Path(self.output_path).mkdir(parents=True, exist_ok=True)
+                    error_file = Path(self.output_path) / f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_{pb_name}_invalid_records.xlsx'
                     dict_to_xlsx(errors, error_file, True)
                     
                     self.update_label.emit('Finished.')
                     self.update_progress_bar.emit(1, 1)
-                    self.finished_warning.emit(f'Data exported partially. Faulty records saved in file:\n{error_file}')
+                    self.finished_warning.emit(f'Data was exported partially. Faulty records have been saved in file:\n{error_file}')
                 else:
                     self.update_label.emit('Finished.')
                     self.update_progress_bar.emit(1, 1)

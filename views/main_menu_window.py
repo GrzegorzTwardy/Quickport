@@ -15,6 +15,7 @@ from views.widgets.progress_bar_dialog import ProgressBarDialog
 from views.widgets.dialog_boxes.settings_dialog import SettingsDialog
 from utils.message_handler import MessageHandler
 from thread_workers.sf_export_worker import SalesforceExportWorker
+from thread_workers.csv_export_worker import CsvExportWorker
 
 
 class MainMenuWindow(QMainWindow):
@@ -51,6 +52,7 @@ class MainMenuWindow(QMainWindow):
         self.ui.chooseFileButton.clicked.connect(self.open_file_dialog)
         self.ui.loadToSfButton.clicked.connect(self.load_data_to_Sf)
         self.ui.profilesButton.clicked.connect(self.open_profile_manager)
+        self.ui.exportCsvButton.clicked.connect(self.export_data_to_csv)
         self.ui.actionSettings.triggered.connect(self.open_settings_dialog)
     
     
@@ -128,7 +130,12 @@ class MainMenuWindow(QMainWindow):
             self.pricebook_path = file_path
             self.ui.loadToSfButton.setEnabled(True)
             self.ui.exportCsvButton.setEnabled(True)
-            
+    
+    
+    def set_export_buttons_enabled(self, state: bool):
+        self.ui.loadToSfButton.setEnabled(state)
+        self.ui.exportCsvButton.setEnabled(state)
+    
     
     def load_data_to_Sf(self):
         current_item = self.ui.mapperList.currentItem()
@@ -144,6 +151,8 @@ class MainMenuWindow(QMainWindow):
             )
             return
         
+        self.set_export_buttons_enabled(False)
+        
         self.progress_dialog = ProgressBarDialog('Setting up export...')
         self.progress_dialog.show()
         
@@ -156,12 +165,46 @@ class MainMenuWindow(QMainWindow):
         
         self.worker.update_label.connect(self.update_label)
         self.worker.update_progress_bar.connect(self.update_progress_bar)
-        self.worker.finished_success.connect(self.diplay_success_msg)
-        self.worker.finished_error.connect(self.display_failure_msg)
-        self.worker.finished_warning.connect(self.display_warning_msg)
+        
+        self.worker.finished_success.connect(lambda: self.diplay_success_msg('Salesforce Export'))
+        self.worker.finished_error.connect(lambda msg: self.display_failure_msg('Salesforce Export', msg))
+        self.worker.finished_warning.connect(lambda msg: self.display_warning_msg('Salesforce Export', msg))
+        
+        self.worker.finished.connect(self.worker.deleteLater)
         
         self.worker.start()
         
+    
+    def export_data_to_csv(self):
+        current_item = self.ui.mapperList.currentItem()
+        if not current_item:
+            MessageHandler.show_warning(self, 'Selection Error', 'Please select a mapper first.')
+            return
+            
+        mapper_path = current_item.data(Qt.UserRole)
+        
+        self.set_export_buttons_enabled(False)
+        
+        self.progress_dialog = ProgressBarDialog('Setting up CSV export...')
+        self.progress_dialog.show()
+        
+        self.worker = CsvExportWorker(
+            mapper_path=mapper_path,
+            pricebook_path=self.pricebook_path,
+            session=self.session
+        )
+        
+        self.worker.update_label.connect(self.update_label)
+        self.worker.update_progress_bar.connect(self.update_progress_bar)
+        
+        self.worker.finished_success.connect(lambda: self.diplay_success_msg('CSV Export'))
+        self.worker.finished_error.connect(lambda msg: self.display_failure_msg('CSV Export', msg))
+        self.worker.finished_warning.connect(lambda msg: self.display_warning_msg('CSV Export', msg))
+        
+        self.worker.finished.connect(self.worker.deleteLater)
+        
+        self.worker.start()
+    
     
     # === WORKER SINGAL SLOTS ===
     @Slot(str)
@@ -174,22 +217,22 @@ class MainMenuWindow(QMainWindow):
         self.progress_dialog.ui.progressBar.setValue(val)
         
     @Slot()
-    def diplay_success_msg(self):
+    def diplay_success_msg(self, title: str):
         self.progress_dialog.close()
-        self.worker = None # clear the reference
-        MessageHandler.show_info(self, 'Salesforce Export', 'Loading pricebook file to Salesforce has ended successfully!')
+        self.set_export_buttons_enabled(True)
+        MessageHandler.show_info(self, title, 'Operation completed successfully!')
         
     @Slot(str)
-    def display_failure_msg(self, msg: str):
+    def display_failure_msg(self, title: str, msg: str):
         self.progress_dialog.close()
-        self.worker = None
-        MessageHandler.show_error(self, 'Salesforce Export', f"Error:\n'{msg}'")
+        self.set_export_buttons_enabled(True)
+        MessageHandler.show_error(self, title, f"Error:\n'{msg}'")
         
     @Slot(str)
-    def display_warning_msg(self, msg: str):
+    def display_warning_msg(self, title: str, msg: str):
         self.progress_dialog.close()
-        self.worker = None
-        MessageHandler.show_error(self, 'Salesforce Export', msg)
+        self.set_export_buttons_enabled(True)
+        MessageHandler.show_error(self, title, msg)
     # ===========================
     
     
