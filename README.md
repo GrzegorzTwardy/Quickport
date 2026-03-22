@@ -1,8 +1,12 @@
-# Założenia
-Aplikacja desktopowa, która automatyzuje import i transformację cenników z plików Excel do platformy Salesforce. Wykorzystuje konfigurowalne pliki JSON do mapowania kolumn, definiowania reguł transformacji i walidacji danych.
 
- # Co zostało do zrobienia:
- - obsłużenie i wyświetlenie błędów na poziomie Mapper Editor
- - implementacja sortowania cenników w Mapper Editor
- - podgląd danych w obiektach Product2 i PricebookEntry po transformacji (w Mapper Editor)
- - usunięcie toolbar w menu (może)
+# Quickport
+
+This is a pre-release version of Quickport desktop application. It is designed to automate the processes of transforming and importing pricebooks from Excel files to the Salesforce platform. It uses configurable JSON files ("mapper" files) that define column mapping and rules of data transformation and validation.
+
+
+## Preparation
+
+1. Create an **External Client App** in your Salesforce environment. Here's the guide on how to do that:  
+    [A Guide for Creating an External Client App for Quickport](/Creating-External-Client-App-Guide.pdf)
+2. Go to https://github.com/GrzegorzTwardy/Quickport/tags and select the latest release.
+3. In the **Assets** section, select the **Quickport.exe** file and save it in the appropriate location.

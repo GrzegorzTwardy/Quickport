@@ -1,3 +1,8 @@
 reference/
 cert/
 backup/
+releases/
+mappers/
+output/
+settings.json
+profiles.json

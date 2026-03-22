@@ -58,7 +58,7 @@ class SalesforceExportWorker(QThread):
             
             if total_success > 0:
                 
-                self.update_label.emit('Loading entries to pricebook(s)...')
+                self.update_label.emit('Loading entries to price book(s)...')
                 
                 self.sf_api.load_pricebook_entry(pb_entry_df)
                 
