@@ -11,8 +11,6 @@ from exceptions.mapper_exceptions import UnknownMappingTypeError, MappingError
 
 class ArgDialog(QDialog):
 
-    # TODO: validate get_args_from_ui (combos cannot be empty ...)
-
     args_saved = Signal(dict)
     canceled = Signal()
     
@@ -75,8 +73,8 @@ class ArgDialog(QDialog):
             
             
     def get_args_dict(self) -> dict:
-        # TODO: remove the first if statement
         if hasattr(self.args_widget, 'validate_inputs'):
+            # if entered data in inputs is invalid: show warning + stop the process of saving args
             if not self.args_widget.validate_inputs():
                 return
 
@@ -233,10 +231,9 @@ class PriceArgs(QWidget):
 
 
     def get_args_from_ui(self):
-        # TODO: ADD VALIDATION OF INPUTS
         return {
             'source_column': self.src_col_combo.currentData(),
-            'conversion_factor': float(self.cf_le.text()) # add error check?
+            'conversion_factor': float(self.cf_le.text())
         }
         
 
@@ -369,10 +366,9 @@ class ReplaceArgs(QWidget):
         
         if self.mapping_rows_count == 0:
             self.add_mapping_row(None)
-        
+
 
     def get_args_from_ui(self):
-        # TODO: ADD VALIDATION OF INPUTS
         value_mapping = {}
         
         for mapping in self.mapping_rows:
@@ -527,6 +523,19 @@ class JoinArgs(QWidget):
             self.add_join_row(None)
         
 
+    def validate_inputs(self) -> bool:
+        separator = self.separator_le.text()
+
+        if separator == '':
+            MessageHandler.show_warning(
+                self,
+                'Invalid Input',
+                'Please enter a separator character.'
+            )
+            return False
+        return True
+
+
     def get_args_from_ui(self):
         # TODO: ADD VALIDATION OF INPUTS
         src_columns = []
@@ -583,7 +592,7 @@ class FragmentArgs(QWidget):
             self.sep_le.setText(args.get('separator', ''))
             self.part_spinbox.setValue(int(args.get('part', 1)))
         except Exception as e:
-            print(f'Config Error: {e}')
+            MessageHandler.show_warning(self, 'Config Error', 'Failed to load the saved configuration for this function.')
 
 
     def validate_inputs(self) -> bool:
@@ -593,7 +602,7 @@ class FragmentArgs(QWidget):
             MessageHandler.show_warning(
                 self,
                 'Invalid Input',
-                'Please enter separator character.'
+                'Please enter a separator character.'
             )
             return False
         return True
