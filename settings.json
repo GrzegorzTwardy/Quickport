@@ -1,6 +1,0 @@
-{
-    "mappers_path": "./mappers/",
-    "output_path": "./output/",
-    "profiles_file_path": "./profiles.json",
-    "max_table_records": 50
-}

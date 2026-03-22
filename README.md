@@ -1,7 +1,7 @@
 
 # Quickport
 
-This is a pre-release version of Quickport desktop application. It is designed to automate the processes of transforming and importing pricebooks from Excel files to the Salesforce platform. It uses configurable JSON files ("mapper" files) that define column mapping and rules of data transformation and validation.
+This is a pre-release version of Quickport desktop application. It is designed to automate the processes of transforming and importing price books from Excel files to the Salesforce platform. It uses configurable JSON files (**mapper** files) that define column mapping and rules of data transformation and validation.
 
 
 ## Preparation
