@@ -360,6 +360,7 @@ class MapperEditorWindow(QWidget):
                 
                 self.refresh_mapper_list.emit()
                 
+                self.is_dirty = False
                 self.close()
 
         except MappingNotSetError as e:
