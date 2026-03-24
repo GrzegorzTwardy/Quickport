@@ -27,6 +27,7 @@ class MainMenuWindow(QMainWindow):
         
         self.session = AppSession()
         self.full_name = None
+        self.env_name = None
         self.sf_api = None
         
         # views
@@ -75,13 +76,16 @@ class MainMenuWindow(QMainWindow):
     def on_login(self):
         if self.profile_manager_window is not None:
             self.full_name = self.profile_manager_window.full_name
+            self.env_name = self.profile_manager_window.env_name
             self.sf_api = self.profile_manager_window.sf_api
 
         self.ui.exportPricebookGroupBox.setEnabled(True)
         self.ui.mappersButton.setEnabled(True)
         
         display_name = self.full_name if self.full_name else '-none-'
+        display_env = self.env_name if self.env_name else '-none-'
         self.ui.currentUsernameLabel.setText(display_name)
+        self.ui.currentSfEnvLabel.setText(display_env)
         
         self.load_mappers()
     
@@ -95,6 +99,7 @@ class MainMenuWindow(QMainWindow):
     def open_mapper_list(self):
         if self.mapper_list_window is None:
             self.mapper_list_window = MapperListWindow(self.session)
+            self.mapper_list_window.list_changed.connect(self.load_mappers)
             self.mapper_list_window.destroyed.connect(lambda: setattr(self, 'mapper_list_window', None))
             self.mapper_list_window.show()
         else:

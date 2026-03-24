@@ -5,7 +5,7 @@ from pathlib import Path
 
 from core.mapper.mapper_model import MapperModel, ProductFieldMapping, PricebookConfig, CurrencyMapping
 from utils.xlsx_manager import get_sheets_from_file
-from core.mapper.mapper_functions import apply_mapping_function
+from core.mapper.mapper_functions import apply_mapping_function, price
 from core.settings.settings_manager import settings_manager
 
 from dtos.session import AppSession
@@ -145,8 +145,7 @@ class MapperEngine:
                     sheet_df,
                     invalid_mask,
                     sheet_name,
-                    sf_field,
-                    reason=f'Mapping type {mapping.mapping_type} failed'
+                    f'Mapping type {mapping.mapping_type} failed'
                 )
             
             # ---- handling unwanted nulls
@@ -158,8 +157,7 @@ class MapperEngine:
                         sheet_df,
                         null_mask,
                         sheet_name,
-                        sf_field,
-                        reason='Null value not allowed'
+                        'Null value not allowed'
                     )
         
         # check if ProductCode (key field for mapping PricebookEntry) is missing
@@ -193,11 +191,18 @@ class MapperEngine:
                 
                 if temp_df.empty:
                     continue
-
+                
+                # cleaning up prices column before multiplying values using PRICE
+                formatted_prices, invalid_mask = price(temp_df['raw_price'], currency.conversion_factor)
+                
+                
                 temp_df['Pricebook2Id'] = pb_config.pricebook_id
                 temp_df['CurrencyIsoCode'] = currency.code
-                temp_df['UnitPrice'] = temp_df['raw_price'] * currency.conversion_factor
+                temp_df['UnitPrice'] = formatted_prices
                 temp_df['IsActive'] = True
+
+                # removing NA values from formatted data
+                temp_df = temp_df.dropna(subset=['UnitPrice'])
 
                 final_cols = ['ProductCode', 'Pricebook2Id', 'CurrencyIsoCode', 'UnitPrice', 'IsActive']
                 entries_frames.append(temp_df[final_cols])

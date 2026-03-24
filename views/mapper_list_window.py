@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QWidget, QListWidgetItem, QMessageBox
 from PySide6.QtGui import QIcon
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 
 import json
 from pathlib import Path
@@ -12,6 +12,8 @@ from dtos.session import AppSession
 
 
 class MapperListWindow(QWidget):
+    
+    list_changed = Signal()
     
     def __init__(self, session: AppSession):
         super().__init__()
@@ -73,6 +75,8 @@ class MapperListWindow(QWidget):
                 self.ui.mapperList.setCurrentRow(0)
             self.ui.editButton.setEnabled(True)
             self.ui.deleteButton.setEnabled(True)
+        
+        self.list_changed.emit()
     
     
     def add_new_mapper(self): # singleton

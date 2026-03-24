@@ -78,22 +78,51 @@ class Ui_MainMenu(object):
         self.loginFrame.setSizePolicy(sizePolicy2)
         self.loginFrame.setFrameShape(QFrame.Shape.StyledPanel)
         self.loginFrame.setFrameShadow(QFrame.Shadow.Raised)
-        self.horizontalLayout = QHBoxLayout(self.loginFrame)
-        self.horizontalLayout.setObjectName(u"horizontalLayout")
-        self.horizontalLayout.setContentsMargins(-1, 9, -1, 9)
+        
+        self.loginLayout = QGridLayout(self.loginFrame)
+        self.loginLayout.setObjectName(u"loginLayout")
+        self.loginLayout.setContentsMargins(-1, 9, -1, 9)
+        
         self.loggedAsLabel = QLabel(self.loginFrame)
         self.loggedAsLabel.setObjectName(u"loggedAsLabel")
-
-        self.horizontalLayout.addWidget(self.loggedAsLabel)
-
+        
+        self.loginLayout.addWidget(self.loggedAsLabel, 0, 0, 1, 1)
+        
         self.currentUsernameLabel = QLabel(self.loginFrame)
         self.currentUsernameLabel.setObjectName(u"currentUsernameLabel")
 
-        self.horizontalLayout.addWidget(self.currentUsernameLabel)
-
+        self.loginLayout.addWidget(self.currentUsernameLabel, 0, 1, 1, 1)
+        
+        self.salesforceEnvLabel = QLabel(self.loginFrame)
+        self.salesforceEnvLabel.setObjectName(u"salesforceEnvLabel")
+        
+        self.loginLayout.addWidget(self.salesforceEnvLabel, 1, 0, 1, 1)
+        
+        self.currentSfEnvLabel = QLabel(self.loginFrame)
+        self.currentSfEnvLabel.setObjectName(u"currentSfEnvLabel")
+        
+        self.loginLayout.addWidget(self.currentSfEnvLabel, 1, 1, 1, 1)
+        
         self.horizontalSpacer = QSpacerItem(138, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+        self.loginLayout.addItem(self.horizontalSpacer, 0, 2, 2, -1)
 
-        self.horizontalLayout.addItem(self.horizontalSpacer)
+        
+        # self.horizontalLayout = QHBoxLayout(self.loginFrame)
+        # self.horizontalLayout.setObjectName(u"horizontalLayout")
+        # self.horizontalLayout.setContentsMargins(-1, 9, -1, 9)
+        # self.loggedAsLabel = QLabel(self.loginFrame)
+        # self.loggedAsLabel.setObjectName(u"loggedAsLabel")
+
+        # self.horizontalLayout.addWidget(self.loggedAsLabel)
+
+        # self.currentUsernameLabel = QLabel(self.loginFrame)
+        # self.currentUsernameLabel.setObjectName(u"currentUsernameLabel")
+
+        # self.horizontalLayout.addWidget(self.currentUsernameLabel)
+
+        # self.horizontalSpacer = QSpacerItem(138, 20, QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum)
+
+        # self.horizontalLayout.addItem(self.horizontalSpacer)
 
 
         self.gridLayout_2.addWidget(self.loginFrame, 0, 0, 1, 2)
@@ -191,6 +220,8 @@ class Ui_MainMenu(object):
         self.mappersButton.setText(QCoreApplication.translate("MainMenu", u"Mappers", None))
         self.loggedAsLabel.setText(QCoreApplication.translate("MainMenu", u"Logged as:", None))
         self.currentUsernameLabel.setText(QCoreApplication.translate("MainMenu", u"-none-", None))
+        self.salesforceEnvLabel.setText(QCoreApplication.translate("MainMenu", u"Environment:", None))
+        self.currentSfEnvLabel.setText(QCoreApplication.translate("MainMenu", u"-none-", None))
         self.exportPricebookGroupBox.setTitle(QCoreApplication.translate("MainMenu", u"Export Data", None))
         self.selectMapperLabel.setText(QCoreApplication.translate("MainMenu", u"Select mapper:", None))
         self.fileLabel.setText(QCoreApplication.translate("MainMenu", u"Choose pricebook file:", None))

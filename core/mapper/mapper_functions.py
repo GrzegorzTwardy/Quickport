@@ -1,4 +1,5 @@
 import pandas as pd
+import numpy as np
 from exceptions.mapper_exceptions import UnknownMappingTypeError
 from core.mapper.mapper_model import ProductFieldMapping
 
@@ -17,15 +18,16 @@ def cell(column: pd.Series, row: int):
 
 # get price 0.00 format from col
 def price(column: pd.Series, conversion_factor: float):
-    # pd.Series of validated prices (true - valid price, false - not valid)
-    matches = column.astype(str).str.match(r'^\d+(\.\d{1,2})?$')
-
-    values = pd.Series(index=column.index, dtype='float')
-    values[matches] = column[matches].astype(float) * conversion_factor
-
-    formatted = values.map(lambda x: format(x, '.2f') if pd.notna(x) else None)
+    clean_column = column.astype(str).str.replace(',', '.', regex=False).replace('nan', np.nan)
+    numeric_col = pd.to_numeric(clean_column, errors='coerce')
+    valid_mask = numeric_col.notna() & (numeric_col >= 0)
+    calculated_values = numeric_col[valid_mask] * conversion_factor
     
-    invalid_mask = ~matches
+    formatted = pd.Series(None, index=column.index, dtype=object)
+    formatted[valid_mask] = calculated_values.map(lambda x: float(f"{x:.2f}"))
+    
+    invalid_mask = ~valid_mask
+    
     return formatted, invalid_mask
 
 
@@ -108,26 +110,32 @@ def apply_mapping_function(df, mapping: ProductFieldMapping) -> tuple[pd.Series,
      
 
 if __name__ == '__main__':
-    df = pd.DataFrame(
-        [['text1', 'v1', 0, 'x-y-z'], 
-        ['text2', 'v2', 1, 'x-y-z'], 
-        ['text3', 'v3', 2, 'x-y-z']], 
-        columns=['COL1', 'COL2', 'COL3', 'COL4']
-    )
+    from pathlib import Path
+    
+    pb_path = Path("./releases/pre-release-version/dist/Ironscales_Import_Data.xlsx")
+    
+    df = pd.read_excel(pb_path)
+    
+    series = df['Price']
+
+    print('Series and types before transforming:')
+    print(series)
+    print(series.apply(type))
 
     mapping = ProductFieldMapping(
         included=True,
         sf_target_field='test',
-        source_column='test',
-        mapping_type='FRAGMENT',
-        allows_nulls=True,
+        source_column=None,
+        mapping_type='PRICE',
+        allows_nulls=False,
         args={
-            'source_column': 'COL4',
-            'separator': '-',
-            'part': 2
+            'source_column': 'Price',
+            'conversion_factor': 2.00,
         }
     )
     
-    df['COL4'],_ = apply_mapping_function(df, mapping)
+    series,_ = apply_mapping_function(df, mapping)
     
-    print(df)
+    print('\nSeries and types before transforming:')
+    print(series)
+    print(series.apply(type))

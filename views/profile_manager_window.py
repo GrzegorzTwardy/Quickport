@@ -25,6 +25,7 @@ class ProfileManagerWindow(QWidget):
         self.session = session
         self.sf_api = None
         self.full_name = None
+        self.env_name = None
 
         self.profile_service = ProfileService()
         
@@ -201,6 +202,13 @@ class ProfileManagerWindow(QWidget):
             
             # validate user's Salesforce info
             validate_metadata(sf_metadata)
+
+            # --- get env name to dipsplay it in main menu
+            item = self.ui.profileList.currentItem()
+
+            if item is not None:
+                self.env_name = item.text()
+            # ---
 
             self.session.login(sf_metadata)
             
