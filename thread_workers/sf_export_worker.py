@@ -56,36 +56,34 @@ class SalesforceExportWorker(QThread):
             if prod_results.get('insert'):
                 total_success += prod_results['insert']['success']
             
+            errors.extend(self.sf_api.execution_errors)
+            
             if total_success > 0:
-                
                 self.update_label.emit('Loading entries to price book(s)...')
-                
                 self.sf_api.load_pricebook_entry(pb_entry_df)
                 
-                pb_name = Path(self.pricebook_path).stem
                 errors.extend(self.sf_api.execution_errors)
                 
-                if len(errors) > 0:
-                    
-                    self.update_label.emit('Saving faulty records...')
-                    
-                    Path(self.output_path).mkdir(parents=True, exist_ok=True)
-                    error_file = Path(self.output_path) / f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_{pb_name}_invalid_records.xlsx'
-                    dict_to_xlsx(errors, error_file, True)
-                    
-                    self.update_label.emit('Finished.')
-                    self.update_progress_bar.emit(1, 1)
-                    self.finished_warning.emit(f'Data was exported partially. Faulty records have been saved in file:\n{error_file}')
-                else:
-                    self.update_label.emit('Finished.')
-                    self.update_progress_bar.emit(1, 1)
-                    self.finished_success.emit()
-            else:
+            if len(errors) > 0:
+                self.update_label.emit('Saving faulty records...')
+                pb_name = Path(self.pricebook_path).stem
+                
+                Path(self.output_path).mkdir(parents=True, exist_ok=True)
+                error_file = Path(self.output_path) / f'{datetime.now().strftime("%Y-%m-%d_%H-%M-%S")}_{pb_name}_invalid_records.xlsx'
+                dict_to_xlsx(errors, error_file, True)
                 
                 self.update_label.emit('Finished.')
                 self.update_progress_bar.emit(1, 1)
                 
-                self.finished_error.emit('There were no products that could be properly loaded into Product2 object.')
+                if total_success > 0:
+                    self.finished_warning.emit(f'Data was exported partially. Faulty records have been saved in file:\n{error_file}')
+                else:
+                    self.finished_error.emit(f'Export failed. Check the reason for failure in file:\n{error_file}')
+            
+            elif total_success > 0:
+                self.update_label.emit('Finished.')
+                self.update_progress_bar.emit(1, 1)
+                self.finished_success.emit()
         
         except Exception as e:
             self.finished_error.emit(str(e))

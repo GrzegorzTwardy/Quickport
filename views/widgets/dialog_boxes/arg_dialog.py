@@ -14,10 +14,11 @@ class ArgDialog(QDialog):
     args_saved = Signal(dict)
     canceled = Signal()
     
-    def __init__(self, mapping_type: str, sheet_columns: list[str], args_to_load: dict | None, parent=None):
+    def __init__(self, mapping_type: str, sheet_columns: list[str], args_to_load: dict | None, picklist: list | None, parent=None):
         super().__init__(parent)
         self.setModal(True)
         self.args_to_load = args_to_load
+        self.picklist = picklist
         self.saved = False # for "changes will not be saved" pop up
         
         # DTO
@@ -87,11 +88,11 @@ class ArgDialog(QDialog):
     def setup_args(self):
         match self.mapping_type:
             case 'SET ALL':
-                self.args_widget = SetAllArgs(self.args_to_load, self)
+                self.args_widget = SetAllArgs(self.args_to_load, self.picklist, self)
             case 'PRICE':
                 self.args_widget = PriceArgs(self.sheet_columns, self.args_to_load, self)
             case 'REPLACE':
-                self.args_widget = ReplaceArgs(self.sheet_columns, self.args_to_load, self)
+                self.args_widget = ReplaceArgs(self.sheet_columns, self.args_to_load, self.picklist, self)
             case 'JOIN':
                 self.args_widget = JoinArgs(self.sheet_columns, self.args_to_load, self)
             case 'FRAGMENT':
@@ -108,6 +109,14 @@ def setup_src_column_combo(sheet_columns, combo):
         combo.addItem(f'{i}: {col}', col)
     combo.setCurrentIndex(0)
 
+
+def set_combo_values(values: list, combo):
+    combo.clear()
+    for value in values:
+        combo.addItem(str(value), str(value))
+    if values:
+        combo.setCurrentIndex(0)
+        
 
 def stylize_combo(combo: QComboBox):
     
@@ -150,33 +159,55 @@ def set_combo_index(combo: QComboBox, value: str):
 # - set all funtion
 class SetAllArgs(QWidget):
     
-    def __init__(self, args: dict, parent):
+    def __init__(self, args: dict, picklist: list | None, parent):
         super().__init__(parent)
         
         self.layout = QFormLayout(self)
         self.layout.setLabelAlignment(Qt.AlignRight)
         
-        self.text_label = QLabel(self)
-        self.text_label.setText('text value: ')
+        self.has_picklist = True if picklist else False
         
-        self.text_le = QLineEdit(self)
-        self.text_le.setObjectName('text')
-        
-        self.layout.addRow(self.text_label, self.text_le)
+        if self.has_picklist:
+            self.text_label = QLabel(self)
+            self.text_label.setText('value: ')
+            
+            self.value_combo = QComboBox(self)
+            self.value_combo.setObjectName('value_combo')
+            
+            set_combo_values(picklist, self.value_combo)
+            stylize_combo(self.value_combo)
+            
+            self.layout.addRow(self.text_label, self.value_combo)
+        else:
+            self.text_label = QLabel(self)
+            self.text_label.setText('text value: ')
+            
+            self.text_le = QLineEdit(self)
+            self.text_le.setObjectName('text')
+            self.layout.addRow(self.text_label, self.text_le)
+            self.text_le.setFocus() 
         
         if args:
             self.fill_ui(args)
-            
-        self.text_le.setFocus()
         
     
     def fill_ui(self, args: dict):
-        self.text_le.setText(args.get('text', ''))
+        if self.has_picklist:
+            value = args.get('text')
+            if value is not None:
+                set_combo_index(self.value_combo, value)
+        else:
+            self.text_le.setText(args.get('text', ''))
     
 
     def get_args_from_ui(self):
+        if self.has_picklist:
+            value = self.value_combo.currentData()
+        else:
+            value = self.text_le.text()
+        
         return {
-            'text': self.text_le.text()
+            'text': value
         }
         
 
@@ -240,11 +271,13 @@ class PriceArgs(QWidget):
 # - replace function
 class ReplaceArgs(QWidget):
     
-    def __init__(self, sheet_columns: list[str], args: dict | None, parent):
+    def __init__(self, sheet_columns: list[str], args: dict | None, picklist: list | None, parent):
         super().__init__(parent)
         
         self.mapping_rows_count = 0
         self.mapping_rows = [] # api atribute
+        self.has_picklist = True if picklist else False
+        self.picklist = picklist
         
         self.parent = parent
         
@@ -300,19 +333,34 @@ class ReplaceArgs(QWidget):
 
     def add_mapping_row(self, value_pair: tuple[str, str] | None):
         current_le = QLineEdit(self.mappings_frame)
-        new_le = QLineEdit(self.mappings_frame)
-
-        if value_pair:
-            current_le.setText(value_pair[0])
-            new_le.setText(value_pair[1])
-
-        # adding rows to api atribute
-        self.mapping_rows.append((current_le, new_le))
         
-        row = self.mapping_rows_count
+        if self.has_picklist:
+            new_combo = QComboBox(self.mappings_frame)
+            set_combo_values(self.picklist, new_combo)
+            stylize_combo(new_combo)
+            
+            if value_pair:
+                current_le.setText(value_pair[0])
+                set_combo_index(new_combo, value_pair[1])
 
-        self.mappings_layout.addWidget(current_le, row, 0)
-        self.mappings_layout.addWidget(new_le, row, 1)
+            self.mapping_rows.append((current_le, new_combo))
+            
+            row = self.mapping_rows_count
+            self.mappings_layout.addWidget(current_le, row, 0)
+            self.mappings_layout.addWidget(new_combo, row, 1)
+        else:
+            new_le = QLineEdit(self.mappings_frame)
+
+            if value_pair:
+                current_le.setText(value_pair[0])
+                new_le.setText(value_pair[1])
+
+            # adding rows to api atribute
+            self.mapping_rows.append((current_le, new_le))
+            
+            row = self.mapping_rows_count
+            self.mappings_layout.addWidget(current_le, row, 0)
+            self.mappings_layout.addWidget(new_le, row, 1)
 
         self.mappings_layout.setColumnStretch(0, 1)
         self.mappings_layout.setColumnStretch(1, 1)
@@ -373,7 +421,11 @@ class ReplaceArgs(QWidget):
         
         for mapping in self.mapping_rows:
             current_value = mapping[0].text()
-            new_value = mapping[1].text()
+            
+            if self.has_picklist:
+                new_value = mapping[1].currentData()
+            else:
+                new_value = mapping[1].text()
             
             if not current_value:
                 continue
@@ -628,7 +680,16 @@ if __name__ == "__main__":
     layout = QGridLayout()
     window.setLayout(layout)
     
-    row = Product2Row('sf_field', { 'required': 'True', 'readOnly':'false' }, ['field1', 'field2'], None)
+    row = Product2Row(
+        'sf_field', 
+        {
+            'required': 'True',
+            'readOnly':'false',
+            'picklistValues': ['val1', 'val2']
+        }, 
+        ['field1', 'field2'], 
+        None
+    )
     
     layout.addWidget(row.include_checkbox, 0, 0) 
     layout.addWidget(row.name_label, 0, 1) 

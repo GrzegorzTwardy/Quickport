@@ -164,7 +164,7 @@ class Product2Row(QObject):
 
 
     # === setting up arg window ===        
-    def open_arg_window(self, mapping_name):
+    def open_arg_window(self, mapping_name: str):
         
         def _save_args(args):
             self.mapping_args = args
@@ -177,11 +177,14 @@ class Product2Row(QObject):
                 if index != -1:
                     self.function_combo.setCurrentIndex(index)
         
+        picklist_data = self.field_metadata.get('picklistValues')
+        picklist = picklist_data if picklist_data else None
+        
         # check if the same mapping is used again, if so then load saved arg config
         if mapping_name == self.last_saved_mapping:      
-            self._arg_window = ArgDialog(mapping_name, self.sheet_columns, self.mapping_args)
+            self._arg_window = ArgDialog(mapping_name, self.sheet_columns, self.mapping_args, picklist)
         else:
-            self._arg_window = ArgDialog(mapping_name, self.sheet_columns, None)
+            self._arg_window = ArgDialog(mapping_name, self.sheet_columns, None, picklist)
             
         self._arg_window.args_saved.connect(_save_args)
         self._arg_window.canceled.connect(_on_canceled)
@@ -206,6 +209,7 @@ class Product2Row(QObject):
     
 
     def create_widgets(self, parent):
+        # TODO: remove include_checkbox if field is uniuqe identifier
         checkbox_size_policy = QSizePolicy(
             QSizePolicy.Policy.Maximum,
             QSizePolicy.Policy.Fixed
