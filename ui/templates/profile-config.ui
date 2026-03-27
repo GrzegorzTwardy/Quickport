@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>412</width>
-    <height>265</height>
+    <width>414</width>
+    <height>313</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -26,19 +26,26 @@
       <enum>QFrame::Shadow::Raised</enum>
      </property>
      <layout class="QGridLayout" name="gridLayout_3" columnstretch="1,2,0">
-      <item row="1" column="1">
-       <widget class="QLineEdit" name="prodCidLe"/>
-      </item>
-      <item row="2" column="1">
-       <widget class="QLineEdit" name="sandboxCidLe"/>
-      </item>
-      <item row="3" column="0">
-       <widget class="QLabel" name="descLabel">
+      <item row="1" column="2">
+       <widget class="QCheckBox" name="prodCidCheckBox">
         <property name="text">
-         <string>Description:</string>
+         <string/>
         </property>
-        <property name="alignment">
-         <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTop|Qt::AlignmentFlag::AlignTrailing</set>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item row="4" column="1">
+       <widget class="QPushButton" name="manageFieldsButton">
+        <property name="maximumSize">
+         <size>
+          <width>100</width>
+          <height>16777215</height>
+         </size>
+        </property>
+        <property name="text">
+         <string>Manage Fields</string>
         </property>
        </widget>
       </item>
@@ -72,7 +79,7 @@
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Consumer Key corresponding to the ECA/Connected App in your test environment.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="text">
-            <string>Sandbox Client ID:</string>
+            <string>Sandbox Customer Key:</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
@@ -80,16 +87,6 @@
           </widget>
          </item>
         </layout>
-       </widget>
-      </item>
-      <item row="0" column="0">
-       <widget class="QLabel" name="nameLabel">
-        <property name="text">
-         <string>Profile Name:</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
-        </property>
        </widget>
       </item>
       <item row="1" column="0">
@@ -122,7 +119,7 @@
             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Consumer Key corresponding to the ECA/Connected App in your production environment&lt;/p&gt;&lt;p&gt;(with exception to Playgrounds on Trailhead).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
            </property>
            <property name="text">
-            <string>Production Client ID:</string>
+            <string>Production Customer Key:</string>
            </property>
            <property name="alignment">
             <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
@@ -142,21 +139,85 @@
         </property>
        </widget>
       </item>
-      <item row="1" column="2">
-       <widget class="QCheckBox" name="prodCidCheckBox">
-        <property name="text">
-         <string/>
+      <item row="0" column="1" colspan="2">
+       <widget class="QLineEdit" name="nameLe">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>22</height>
+         </size>
         </property>
-        <property name="checked">
-         <bool>true</bool>
+       </widget>
+      </item>
+      <item row="1" column="1">
+       <widget class="QLineEdit" name="prodCidLe">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>22</height>
+         </size>
         </property>
        </widget>
       </item>
       <item row="3" column="1" colspan="2">
-       <widget class="QTextEdit" name="descTe"/>
+       <widget class="QTextEdit" name="descTe">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>22</height>
+         </size>
+        </property>
+       </widget>
       </item>
-      <item row="0" column="1" colspan="2">
-       <widget class="QLineEdit" name="nameLe"/>
+      <item row="4" column="0">
+       <widget class="QLabel" name="primaryKeyLabel">
+        <property name="toolTip">
+         <string>Select Product2 fields that identify unique records</string>
+        </property>
+        <property name="text">
+         <string>Primary Key:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="3" column="0">
+       <widget class="QLabel" name="descLabel">
+        <property name="text">
+         <string>Description:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTop|Qt::AlignmentFlag::AlignTrailing</set>
+        </property>
+       </widget>
+      </item>
+      <item row="0" column="0">
+       <widget class="QLabel" name="nameLabel">
+        <property name="text">
+         <string>Profile Name:</string>
+        </property>
+        <property name="alignment">
+         <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
+        </property>
+       </widget>
+      </item>
+      <item row="2" column="1">
+       <widget class="QLineEdit" name="sandboxCidLe">
+        <property name="minimumSize">
+         <size>
+          <width>0</width>
+          <height>22</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item row="5" column="1" colspan="2">
+       <widget class="QLabel" name="fieldListLabe">
+        <property name="text">
+         <string>-none-</string>
+        </property>
+       </widget>
       </item>
      </layout>
     </widget>

@@ -13,7 +13,7 @@ class ChecklistDialog(QDialog):
         self.setWindowTitle(user_operation)
 
         if not available_items or len(available_items) == 0:
-            raise ValueError('no currencies detected')
+            raise ValueError('no items detected')
         
         self.ui.listWidget.setSelectionMode(QListWidget.NoSelection)
         

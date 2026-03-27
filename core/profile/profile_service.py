@@ -41,13 +41,14 @@ class ProfileService:
         name: str,
         production_client_id: str,
         sandbox_client_id: str | None,
-        desc: str
+        desc: str,
+        primary_key: list
     ):
         for profile in self.profiles:
             if profile.name == name:
                 raise ValueError(f"Profile with the name '{name}' already exists.")
         
-        profile = Profile(name, production_client_id, sandbox_client_id, desc)
+        profile = Profile(name, production_client_id, sandbox_client_id, desc, primary_key)
         self.profiles.append(profile)
         self.profiles_empty = False
         
@@ -64,7 +65,8 @@ class ProfileService:
         name: str,
         production_client_id: str,
         sandbox_client_id: str | None,
-        desc: str
+        desc: str,
+        primary_key: list 
     ):
         target_profile = None
         
@@ -81,6 +83,7 @@ class ProfileService:
         target_profile.production_client_id = production_client_id
         target_profile.sandbox_client_id = sandbox_client_id
         target_profile.desc = desc
+        target_profile.primary_key = primary_key
 
         self._save_to_file()
             
@@ -120,5 +123,6 @@ if __name__ == '__main__':
         name='1111111111111111',
         production_client_id='weqwe',
         sandbox_client_id='4324',
-        desc='23432324'
+        desc='23432324',
+        primary_key=['ProductCode']
     )

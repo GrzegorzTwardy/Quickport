@@ -88,7 +88,11 @@ class ProfileManagerWindow(QWidget):
     
     # ============== PROFILE MANAGEMENT ================  
     def add_new_profile(self):
-        add_profile_dialog = ProfileConfigDialog(None)
+        
+        sf_fields_data = self.session.sf_metadata.product2_fields
+        self.prod2_fields = list(sf_fields_data.keys()) if sf_fields_data else []
+        
+        add_profile_dialog = ProfileConfigDialog(None, self.prod2_fields)
         
         if add_profile_dialog.exec() == QDialog.Accepted:
             profile_data = add_profile_dialog.get_data()
@@ -96,7 +100,8 @@ class ProfileManagerWindow(QWidget):
                 name=profile_data['name'],
                 production_client_id=profile_data['prod_client_id'],
                 sandbox_client_id='sandbox_client_id',
-                desc=profile_data['desc']
+                desc=profile_data['desc'],
+                primary_key=profile_data['primary_key']
             )
             self.load_profiles()
             self.toggle_buttons()
@@ -105,7 +110,7 @@ class ProfileManagerWindow(QWidget):
     def edit_profile(self):
         profile = self.get_selected_profile()
         
-        edit_profile_dialog = ProfileConfigDialog(profile)
+        edit_profile_dialog = ProfileConfigDialog(profile, self.prod2_fields)
         
         if edit_profile_dialog.exec() == QDialog.Accepted:
             profile_data = edit_profile_dialog.get_data()
@@ -114,7 +119,8 @@ class ProfileManagerWindow(QWidget):
                 name=profile_data['name'],
                 production_client_id=profile_data['prod_client_id'],
                 sandbox_client_id=profile_data['sandbox_client_id'],
-                desc=profile_data['desc']
+                desc=profile_data['desc'],
+                primary_key=profile_data['primary_key']
             )
             self.load_profiles()
         
@@ -296,7 +302,10 @@ if __name__ == '__main__':
     
     app = QApplication(sys.argv)
     
-    profile_manager_window = ProfileManagerWindow(AppSession())
+    session = AppSession()
+    session.test_login()
+    
+    profile_manager_window = ProfileManagerWindow(session)
     profile_manager_window.show()
     
     sys.exit(app.exec())

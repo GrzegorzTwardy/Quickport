@@ -1,15 +1,20 @@
 from PySide6.QtGui import QIcon
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QDialog
 from ui.ui_profile_config import Ui_ProfileConfig
 from core.profile.profile_service import ProfileService
 from core.profile.profile_model import Profile
 from utils.message_handler import MessageHandler
+from views.widgets.dialog_boxes.checklist_dialog import execute_checklist_dialog, ChecklistDialog
 
 
 class ProfileConfigDialog(QDialog):
     
-    def __init__(self, profile_to_edit: Profile | None, parent=None):
+    def __init__(self, profile_to_edit: Profile | None, prod2_fields: list, parent=None):
         super().__init__(parent)
+        
+        self.prod2_fields = prod2_fields
+        self.selected_fields = []
         
         self.profile_data = {}
         self.profile_to_edit = profile_to_edit
@@ -22,10 +27,30 @@ class ProfileConfigDialog(QDialog):
             
         self.ui.buttonBox.accepted.disconnect() 
         self.ui.buttonBox.accepted.connect(self.on_accept)
+        self.ui.manageFieldsButton.clicked.connect(self.open_checklist)
+        self.ui.nameLe.setFocus()
         
         if profile_to_edit:
             self.update_inputs()
+            
+        if 'ProductCode' in prod2_fields:
+            self.selected_fields.append('ProductCode')
+            self.update_fields_label()
+            
+        self.checklist_dialog = ChecklistDialog(self.prod2_fields, 'Choose Product2 Fields', self)
         
+        
+    def update_fields_label(self):
+        self.ui.fieldListLabel.setText(',\n'.join(self.selected_fields))
+    
+    
+    def open_checklist(self):  
+        if self.checklist_dialog.exec() == QDialog.Accepted: 
+            self.selected_fields = self.checklist_dialog.get_selected_items()
+            self.update_fields_label()
+        else: 
+            return None
+    
 
     def update_inputs(self):
         self.ui.nameLe.setText(self.profile_to_edit.name)
@@ -85,7 +110,8 @@ class ProfileConfigDialog(QDialog):
             'name': name,
             'prod_client_id': prod_client_id,
             'sandbox_client_id': sandbox_client_id,
-            'desc': desc
+            'desc': desc,
+            'primary_key': self.selected_fields
         }
         
         return True
@@ -94,7 +120,33 @@ class ProfileConfigDialog(QDialog):
     def get_data(self):  
         return self.profile_data
         
+
+class FieldsChecklistDialog(ChecklistDialog):
+    
+    def __init__(self, available_items, user_operation, parent):
+        super().__init__(available_items, user_operation, parent)
+        self.selected_rows = []
         
+    def update(self):
+        if self.selected_rows:
+            for i in range(self.ui.listWidget.count()):
+                item = self.ui.listWidget.item(i)
+                if item.text() in self.selected_rows:
+                    item.setCheckState(Qt.Checked)
+                else:
+                    item.setCheckState(Qt.Unchecked)
+    
+    def get_selected_items(self):
+        checked_items = []
+        for i in range(self.ui.listWidget.count()):
+            item = self.ui.listWidget.item(i)
+            if item.checkState() == Qt.Checked:
+                checked_items.append(item.text())
+        self.selected_rows = checked_items
+        self.update()
+        return checked_items
+    
+
 if __name__ == '__main__':
     import sys
     from PySide6.QtWidgets import QApplication
@@ -103,11 +155,9 @@ if __name__ == '__main__':
     from PySide6.QtWidgets import QApplication
     
     app = QApplication(sys.argv)
+    fields = ['ProductCode', 'Name', 'Price', 'Delivery']
     
-    prof_service = ProfileService()
-    profile = prof_service.get_profile_by_name('Do usunięcia')
-    
-    profile_config_dialog = ProfileConfigDialog(profile)
+    profile_config_dialog = ProfileConfigDialog(None, fields)
     
     if profile_config_dialog.exec() == QDialog.Accepted:
         print(profile_config_dialog.get_data())
