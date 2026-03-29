@@ -26,7 +26,9 @@ class ProfileManagerWindow(QWidget):
         self.sf_api = None
         self.full_name = None
         self.env_name = None
-
+        self.primary_key = []
+        
+        self.prod2_fields = []
         self.profile_service = ProfileService()
         
         self.ui = Ui_ProfileManager()
@@ -35,6 +37,10 @@ class ProfileManagerWindow(QWidget):
         
         self._connect_signals()
         self.load_profiles()
+        
+        # initial state
+        self.ui.editProfileButton.setEnabled(False)
+        self.ui.deteleProfileButton.setEnabled(False)
     
     
     def _connect_signals(self):
@@ -88,10 +94,6 @@ class ProfileManagerWindow(QWidget):
     
     # ============== PROFILE MANAGEMENT ================  
     def add_new_profile(self):
-        
-        sf_fields_data = self.session.sf_metadata.product2_fields
-        self.prod2_fields = list(sf_fields_data.keys()) if sf_fields_data else []
-        
         add_profile_dialog = ProfileConfigDialog(None, self.prod2_fields)
         
         if add_profile_dialog.exec() == QDialog.Accepted:
@@ -110,7 +112,11 @@ class ProfileManagerWindow(QWidget):
     def edit_profile(self):
         profile = self.get_selected_profile()
         
-        edit_profile_dialog = ProfileConfigDialog(profile, self.prod2_fields)
+        # if edited profile != loggin in profile
+        if profile.name != self.env_name:
+            edit_profile_dialog = ProfileConfigDialog(profile, [])
+        else:
+            edit_profile_dialog = ProfileConfigDialog(profile, self.prod2_fields)
         
         if edit_profile_dialog.exec() == QDialog.Accepted:
             profile_data = edit_profile_dialog.get_data()
@@ -218,8 +224,17 @@ class ProfileManagerWindow(QWidget):
 
             self.session.login(sf_metadata)
             
+            sf_fields_data = self.session.sf_metadata.product2_fields
+            self.prod2_fields = list(sf_fields_data.keys()) if sf_fields_data else [] 
+            
             self.ui.loginButton.setText("Log In")
             self.ui.loginButton.setEnabled(True)
+            
+            self.ui.editProfileButton.setEnabled(True)
+            self.ui.deteleProfileButton.setEnabled(True)
+            
+            profile = self.get_selected_profile()
+            self.primary_key = profile.primary_key
             
             MessageHandler.show_info(self, "Success", f"Successfully logged as:\n{self.full_name}")
         
@@ -302,10 +317,9 @@ if __name__ == '__main__':
     
     app = QApplication(sys.argv)
     
-    session = AppSession()
-    session.test_login()
-    
+    session = AppSession()    
     profile_manager_window = ProfileManagerWindow(session)
     profile_manager_window.show()
+    session.test_login()
     
     sys.exit(app.exec())

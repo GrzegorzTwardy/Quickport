@@ -10,7 +10,7 @@ class Profile:
     production_client_id: str | None
     sandbox_client_id: str | None
     desc: str
-    primary_key: list
+    primary_key: list = field(default_factory=list)
 
 
     def to_dict(self):

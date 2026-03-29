@@ -31,20 +31,47 @@ class ProfileConfigDialog(QDialog):
         self.ui.nameLe.setFocus()
         
         if profile_to_edit:
-            self.update_inputs()
-            
-        if 'ProductCode' in prod2_fields:
-            self.selected_fields.append('ProductCode')
+            # if edited profile != logged in profile => remove prod2 fields section
+            if not self.prod2_fields:
+                self.delete_prod2_fields_section()
+                
+            # update selected_fields
+            for field in profile_to_edit.primary_key:
+                if field in self.prod2_fields:
+                    self.selected_fields.append(field)
+                    
             self.update_fields_label()
+            self.update_inputs()
+        else:
+            # if adding new profile, we dont need to manage prod2 fields (first we have to log in)
+            self.delete_prod2_fields_section()
+        
+        self.checklist_dialog = FieldsChecklistDialog(
+            self.prod2_fields, 
+            'Choose Product2 Fields',
+            self.selected_fields,
+            self
+        ) if self.prod2_fields else None
+    
+    
+    def delete_widget(self, widget, layout):
+        if widget:
+            layout.removeWidget(widget)
+            widget.setParent(None)
+            widget.deleteLater()
             
-        self.checklist_dialog = ChecklistDialog(self.prod2_fields, 'Choose Product2 Fields', self)
-        
-        
+            
+    def delete_prod2_fields_section(self):
+        self.delete_widget(self.ui.manageFieldsButton, self.ui.gridLayout_3)
+        self.delete_widget(self.ui.primaryKeyLabel, self.ui.gridLayout_3)
+        self.delete_widget(self.ui.fieldListLabel, self.ui.gridLayout_3)
+
+    
     def update_fields_label(self):
         self.ui.fieldListLabel.setText(',\n'.join(self.selected_fields))
     
     
-    def open_checklist(self):  
+    def open_checklist(self):
         if self.checklist_dialog.exec() == QDialog.Accepted: 
             self.selected_fields = self.checklist_dialog.get_selected_items()
             self.update_fields_label()
@@ -123,9 +150,10 @@ class ProfileConfigDialog(QDialog):
 
 class FieldsChecklistDialog(ChecklistDialog):
     
-    def __init__(self, available_items, user_operation, parent):
+    def __init__(self, available_items, user_operation, initial_set: list | None, parent):
         super().__init__(available_items, user_operation, parent)
-        self.selected_rows = []
+        self.selected_rows = initial_set if initial_set else []
+        self.update()
         
     def update(self):
         if self.selected_rows:
