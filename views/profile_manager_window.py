@@ -1,5 +1,5 @@
 from PySide6.QtWidgets import (
-    QWidget, QMessageBox, QListWidgetItem, QDialog
+    QWidget, QMessageBox, QListWidgetItem, QDialog, QHBoxLayout, QLabel, QStyle, QDialogButtonBox
 )
 from PySide6.QtGui import QIcon
 from PySide6.QtCore import Signal, Qt
@@ -13,6 +13,7 @@ from salesforce_api.salesforce_api import SalesforceApi
 from exceptions.login_exceptions import *
 from utils.message_handler import MessageHandler
 from views.widgets.profile_config import ProfileConfigDialog
+from views.widgets.dialog_boxes.checklist_dialog import ChecklistDialog
 
 
 # TODO: change focus when new profile is added or edited
@@ -58,14 +59,23 @@ class ProfileManagerWindow(QWidget):
             return item.data(Qt.UserRole)
         else:
             return None
+        
+    
+    def select_profile_by_name(self, profile_name: str):
+        matching_items = self.ui.profileList.findItems(profile_name, Qt.MatchExactly)
+        if matching_items:
+            self.ui.profileList.setCurrentItem(matching_items[0])
     
     
     def toggle_buttons(self):
         not_empty = self.ui.profileList.count() > 0
-        self.ui.editProfileButton.setEnabled(not_empty)
-        self.ui.deteleProfileButton.setEnabled(not_empty)
+        is_logged_in = self.sf_api is not None 
+
         self.ui.loginButton.setEnabled(not_empty)
         self.ui.logToSandbox.setEnabled(not_empty)
+
+        self.ui.editProfileButton.setEnabled(not_empty and is_logged_in)
+        self.ui.deteleProfileButton.setEnabled(not_empty and is_logged_in)
        
         
     def change_description(self):
@@ -107,6 +117,8 @@ class ProfileManagerWindow(QWidget):
             )
             self.load_profiles()
             self.toggle_buttons()
+            
+            self.select_profile_by_name(profile_data['name'])
 
         
     def edit_profile(self):
@@ -129,6 +141,7 @@ class ProfileManagerWindow(QWidget):
                 primary_key=profile_data['primary_key']
             )
             self.load_profiles()
+            self.select_profile_by_name(profile_data['name'])
         
     
     def confirm_operation(self, operation, obj):
@@ -230,14 +243,41 @@ class ProfileManagerWindow(QWidget):
             self.ui.loginButton.setText("Log In")
             self.ui.loginButton.setEnabled(True)
             
-            self.ui.editProfileButton.setEnabled(True)
-            self.ui.deteleProfileButton.setEnabled(True)
+            self.toggle_buttons()
             
             profile = self.get_selected_profile()
             self.primary_key = profile.primary_key
             
-            MessageHandler.show_info(self, "Success", f"Successfully logged as:\n{self.full_name}")
-        
+            if self.primary_key:
+                MessageHandler.show_info(self, "Success", f"Successfully logged as:\n{self.full_name}")
+            else:
+                pk_dialog = PrimaryKeyChecklistDialog(
+                    self.prod2_fields, 
+                    'Add Primary Key',
+                    (
+                        f"Successfully logged as:\n{self.full_name}!\n"
+                        "Hence this is your first time logging in to this profile, "
+                        "you will need to configure Product2 fields that uniquely "
+                        "identify products - primary key.\nQuickport assumes that "
+                        "'ProductCode' is the default primary key, but you can change it below."
+                    ),
+                    self
+                )
+                
+                if pk_dialog.exec() == QDialog.Accepted:
+                    self.primary_key = pk_dialog.get_selected_items()
+                    self.profile_service.edit_profile(
+                        target_profile_name=profile.name,
+                        name=profile.name,
+                        production_client_id=profile.production_client_id,
+                        sandbox_client_id=profile.sandbox_client_id,
+                        desc=profile.desc,
+                        primary_key=self.primary_key
+                    )
+                    self.load_profiles()
+                    self.select_profile_by_name(profile.name)
+                    
+                
         # Data Validation / API errors (after successfull login)
         except Exception as e:
             self.ui.loginButton.setText('Log In')
@@ -308,7 +348,48 @@ class ProfileManagerWindow(QWidget):
             if "has been canceled" not in str(e):
                 MessageHandler.show_error(self, 'Login Error', 'An error occured while trying to log in.', str(e))
     # ====================================================
+
+
+class PrimaryKeyChecklistDialog(ChecklistDialog):
     
+    def __init__(self, available_items: list, user_operation: str, info_text: str, parent: QWidget | None = None):
+        super().__init__(available_items, user_operation, parent)
+        self.resize(300, 400)
+        
+        cancel_button = self.ui.buttonBox.button(QDialogButtonBox.Cancel)
+        if cancel_button:
+            cancel_button.hide()
+
+        self.setWindowFlags(Qt.Dialog | Qt.WindowTitleHint | Qt.CustomizeWindowHint)
+        
+        header_layout = QHBoxLayout()
+        header_layout.setContentsMargins(7, 0, 7, 15)
+        
+        icon_label = QLabel()
+        info_icon = self.style().standardIcon(QStyle.SP_MessageBoxInformation)
+        icon_label.setPixmap(info_icon.pixmap(32, 32))
+        icon_label.setAlignment(Qt.AlignTop)
+        
+        text_label = QLabel(info_text)
+        text_label.setWordWrap(True)
+        
+        header_layout.addWidget(icon_label)
+        header_layout.addWidget(text_label)
+        header_layout.addStretch()
+        
+        grid = self.ui.gridLayout
+        
+        grid.removeWidget(self.ui.listWidget)
+        grid.removeWidget(self.ui.buttonBox)
+        
+        grid.addLayout(header_layout, 0, 0)
+        grid.addWidget(self.ui.listWidget, 1, 0)
+        grid.addWidget(self.ui.buttonBox, 2, 0)
+        
+        for i in range(self.ui.listWidget.count()):
+            item = self.ui.listWidget.item(i)
+            if item.text() == 'ProductCode':
+                item.setCheckState(Qt.Checked)
     
 if __name__ == '__main__':
     import sys

@@ -6,6 +6,7 @@ from core.profile.profile_service import ProfileService
 from core.profile.profile_model import Profile
 from utils.message_handler import MessageHandler
 from views.widgets.dialog_boxes.checklist_dialog import execute_checklist_dialog, ChecklistDialog
+from utils.message_handler import MessageHandler
 
 
 class ProfileConfigDialog(QDialog):
@@ -40,18 +41,24 @@ class ProfileConfigDialog(QDialog):
                 if field in self.prod2_fields:
                     self.selected_fields.append(field)
                     
+            if 'ProductCode' in self.prod2_fields and not self.selected_fields:
+                self.selected_fields.append('ProductCode')
+                    
             self.update_fields_label()
             self.update_inputs()
         else:
             # if adding new profile, we dont need to manage prod2 fields (first we have to log in)
             self.delete_prod2_fields_section()
         
-        self.checklist_dialog = FieldsChecklistDialog(
-            self.prod2_fields, 
-            'Choose Product2 Fields',
-            self.selected_fields,
-            self
-        ) if self.prod2_fields else None
+        try:
+            self.checklist_dialog = FieldsChecklistDialog(
+                self.prod2_fields, 
+                'Choose Product2 Fields',
+                self.selected_fields,
+                self
+            ) if self.prod2_fields else None
+        except ValueError as e:
+            MessageHandler.show_error(self, 'Profile Error', 'The Salesforce environment associated to this account may be missing crucial informations:\nProduct2 object\'s fields.')
     
     
     def delete_widget(self, widget, layout):
