@@ -11,6 +11,7 @@ class AppSession(QObject):
     def __init__(self):
         super().__init__()
         self.sf_metadata: SfMetadata | None = None
+        self.primary_key = None
 
 
     def login(self, sf_metadata: SfMetadata):

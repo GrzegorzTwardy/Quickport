@@ -22,6 +22,7 @@ class Product2Row(QObject):
         field_metadata: dict, 
         sheet_columns: list[str], 
         field_mapping: ProductFieldMapping | None,
+        is_primary_key: bool,
         parent=None
     ):
         super().__init__(parent)

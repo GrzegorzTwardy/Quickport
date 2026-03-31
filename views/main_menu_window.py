@@ -29,7 +29,7 @@ class MainMenuWindow(QMainWindow):
         self.full_name = None
         self.env_name = None
         self.sf_api = None
-        self.primary_key = None
+        # self.primary_key = None
         
         # views
         self.profile_manager_window = None
@@ -79,7 +79,8 @@ class MainMenuWindow(QMainWindow):
             self.full_name = self.profile_manager_window.full_name
             self.env_name = self.profile_manager_window.env_name
             self.sf_api = self.profile_manager_window.sf_api
-            self.primary_key = self.profile_manager_window.primary_key
+            self.session.primary_key = self.profile_manager_window.primary_key
+            # self.primary_key = self.profile_manager_window.primary_key
 
         self.ui.exportPricebookGroupBox.setEnabled(True)
         self.ui.mappersButton.setEnabled(True)
