@@ -32,6 +32,7 @@ class SheetTab(QWidget):
         super().__init__()
         
         self.session = session
+        
         self.df = df # sheet
         self.preview_df = None
         self.ui = Ui_SheetFrame()
@@ -163,8 +164,9 @@ class SheetTab(QWidget):
             
     def load_product2_fields(self):
         
-        def add_row_to_grid(grid, row, index):
-            grid.addWidget(row.include_checkbox,     index, 0)
+        def add_row_to_grid(grid, row: int, index: int, is_primary: bool):
+            if not is_primary:
+                grid.addWidget(row.include_checkbox,     index, 0)
             grid.addWidget(row.name_label,           index, 1)
             grid.addWidget(row.field_combo,          index, 2)
             grid.addWidget(row.function_combo,       index, 3)
@@ -204,26 +206,37 @@ class SheetTab(QWidget):
             row.config_changed.connect(lambda *args: self.sheet_changed.emit())
 
             self.product2_rows[field_name] = row
-            add_row_to_grid(grid, row, self.next_prod2_row_id)
+            add_row_to_grid(grid, row, self.next_prod2_row_id, False)
             self.next_prod2_row_id += 1
-            
-        for field_name, field_metadata in valid_sf_prod2_fields.items():            
-            mapping_config = existing_mappings.get(field_name)
+        
+        primary_key_fields = {}
+        other_fields = {}
+        
+        for name, data in valid_sf_prod2_fields.items():
+            if name in self.session.primary_key:
+                primary_key_fields[name] = data
+            else:
+                other_fields[name] = data
+        
+        for fields, is_pk in [(primary_key_fields, True), (other_fields, False)]:
+            for field_name, field_metadata in fields.items():    
+                mapping_config = existing_mappings.get(field_name)
+                
+                row = Product2Row(
+                    field_name=field_name,
+                    field_metadata=field_metadata,
+                    sheet_columns=columns,
+                    field_mapping=mapping_config, # can be None -> means its new mapper or not configerd field
+                    is_primary_key=is_pk,
+                    parent=self.ui.product_fields_scroll_area_contents
+                )
 
-            row = Product2Row(
-                field_name=field_name,
-                field_metadata=field_metadata,
-                sheet_columns=columns,
-                field_mapping=mapping_config, # can be None -> means its new mapper or not configerd field
-                parent=self.ui.product_fields_scroll_area_contents
-            )
+                row.config_changed.connect(self.schedule_preview_update)
+                row.config_changed.connect(lambda *args: self.sheet_changed.emit())
 
-            row.config_changed.connect(self.schedule_preview_update)
-            row.config_changed.connect(lambda *args: self.sheet_changed.emit())
-
-            self.product2_rows[field_name] = row
-            add_row_to_grid(grid, row, self.next_prod2_row_id)   
-            self.next_prod2_row_id += 1
+                self.product2_rows[field_name] = row
+                add_row_to_grid(grid, row, self.next_prod2_row_id, is_pk)
+                self.next_prod2_row_id += 1
     
     
     # ==== SETTING UP NEW SHEET TAB =====

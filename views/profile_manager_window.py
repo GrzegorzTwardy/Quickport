@@ -249,6 +249,7 @@ class ProfileManagerWindow(QWidget):
             self.primary_key = profile.primary_key
             
             if self.primary_key:
+                self.session.primary_key = self.primary_key
                 MessageHandler.show_info(self, "Success", f"Successfully logged as:\n{self.full_name}")
             else:
                 pk_dialog = PrimaryKeyChecklistDialog(

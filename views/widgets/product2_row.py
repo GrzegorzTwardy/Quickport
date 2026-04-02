@@ -34,6 +34,7 @@ class Product2Row(QObject):
         self.field_metadata = field_metadata
         self.sheet_columns = sheet_columns
         self.field_mapping = field_mapping
+        self.is_primary_key = is_primary_key
         
         self.functions = mapping_functions_list.copy()
         
@@ -46,13 +47,15 @@ class Product2Row(QObject):
 
         
     def connect_signals(self):
+        # using lambda to bypass passing unnecesary args to a Signal()
         self.field_combo.currentIndexChanged.connect(self.update_combos)
         self.function_combo.currentIndexChanged.connect(self.update_combos)
         self.function_combo.activated.connect(self.on_function_selected)
-        self.include_checkbox.checkStateChanged.connect(self.change_row_state)
-
-        # using lambda to bypass passing unnecesary args to a Signal()
-        self.include_checkbox.stateChanged.connect(lambda *args: self.config_changed.emit())
+        
+        if not self.is_primary_key:
+            self.include_checkbox.checkStateChanged.connect(self.change_row_state)
+            self.include_checkbox.stateChanged.connect(lambda *args: self.config_changed.emit())
+            
         self.field_combo.currentIndexChanged.connect(lambda *args: self.config_changed.emit())
         # self.function_combo.currentIndexChanged.connect(lambda *args: self.config_changed.emit())
         self.allow_nulls_checkbox.stateChanged.connect(lambda *args: self.config_changed.emit())
@@ -92,10 +95,11 @@ class Product2Row(QObject):
 
 
     def update_combos(self):
-        if not self.include_checkbox.isChecked():
-            self.field_combo.setEnabled(False)
-            self.function_combo.setEnabled(False)
-            return
+        if not self.is_primary_key:
+            if not self.include_checkbox.isChecked():
+                self.field_combo.setEnabled(False)
+                self.function_combo.setEnabled(False)
+                return
         
         event_combo = self.sender()
         
@@ -216,9 +220,10 @@ class Product2Row(QObject):
             QSizePolicy.Policy.Fixed
         )
 
-        self.include_checkbox = QCheckBox(parent)
-        self.include_checkbox.setChecked(True)
-        self.include_checkbox.setSizePolicy(checkbox_size_policy)
+        if not self.is_primary_key:
+            self.include_checkbox = QCheckBox(parent)
+            self.include_checkbox.setChecked(True)
+            self.include_checkbox.setSizePolicy(checkbox_size_policy)
 
         max_label_name = 16
         self.name_label = None
@@ -282,9 +287,16 @@ if __name__ == "__main__":
     layout = QGridLayout()
     window.setLayout(layout)
     
-    row = Product2Row('sf_field', { 'required': 'True', 'readOnly':'false' }, ['field1', 'field2'], None)
+    row = Product2Row(
+        'sf_field', 
+        { 'required': 'True', 'readOnly':'false' }, 
+        ['field1', 'field2'], 
+        None, 
+        True, 
+        None
+    )
     
-    layout.addWidget(row.include_checkbox, 0, 0) 
+    # layout.addWidget(row.include_checkbox, 0, 0)
     layout.addWidget(row.name_label, 0, 1) 
     layout.addWidget(row.field_combo, 0, 2) 
     layout.addWidget(row.function_combo, 0, 3) 
