@@ -142,6 +142,9 @@ class ProfileManagerWindow(QWidget):
             )
             self.load_profiles()
             self.select_profile_by_name(profile_data['name'])
+
+            if profile.name == self.env_name:
+                self.session.primary_key = profile.primary_key
         
     
     def confirm_operation(self, operation, obj):
@@ -267,6 +270,7 @@ class ProfileManagerWindow(QWidget):
                 
                 if pk_dialog.exec() == QDialog.Accepted:
                     self.primary_key = pk_dialog.get_selected_items()
+                    self.session.primary_key = self.primary_key
                     self.profile_service.edit_profile(
                         target_profile_name=profile.name,
                         name=profile.name,

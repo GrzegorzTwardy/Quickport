@@ -63,7 +63,8 @@ class Product2Row(QObject):
     
     def load_mapping(self):
         if not self.field_mapping.included:
-            self.include_checkbox.setChecked(False)
+            if not self.is_primary_key:
+                self.include_checkbox.setChecked(False)
             self.change_row_state()
             
         if self.field_mapping.source_column is not None:
@@ -132,7 +133,10 @@ class Product2Row(QObject):
             self.allow_nulls_checkbox
         ]
         
-        is_enabled = self.include_checkbox.isChecked()
+        if not self.is_primary_key:
+            is_enabled = self.include_checkbox.isChecked()
+        else:
+            is_enabled = True
         for w in row_widgets:
             w.setEnabled(is_enabled)
 
@@ -149,7 +153,7 @@ class Product2Row(QObject):
     def get_product2_mapping(self, strict: bool = True) -> ProductFieldMapping | None:    
         source_column = self.field_combo.currentData()
         mapping_type = self.function_combo.currentData()
-        is_included = self.include_checkbox.isChecked()
+        is_included = True if self.is_primary_key else self.include_checkbox.isChecked()
         
         # if both options are empty '...'
         if is_included and source_column is None and mapping_type is None:
