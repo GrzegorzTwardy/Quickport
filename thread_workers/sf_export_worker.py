@@ -48,7 +48,7 @@ class SalesforceExportWorker(QThread):
             
             self.update_label.emit('Loading data to Product2 object...')
             
-            prod_results = self.sf_api.load_product2(prod2_df, 'upsert') 
+            prod_results = self.sf_api.load_product2(prod2_df, self.session.primary_key, 'upsert') 
 
             total_success = 0
             if prod_results.get('update'):
@@ -60,7 +60,7 @@ class SalesforceExportWorker(QThread):
             
             if total_success > 0:
                 self.update_label.emit('Loading entries to price book(s)...')
-                self.sf_api.load_pricebook_entry(pb_entry_df)
+                self.sf_api.load_pricebook_entry(pb_entry_df, self.session.primary_key)
                 
                 errors.extend(self.sf_api.execution_errors)
                 

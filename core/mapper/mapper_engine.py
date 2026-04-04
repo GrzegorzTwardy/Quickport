@@ -27,6 +27,9 @@ class MapperEngine:
             raise Exception(str(e))
         
         self.session = session
+
+        if not self.session.primary_key:
+            raise MappingError(f'Primary Key has to be set up.')
         
         self.pricebooks: dict[str, pd.DataFrame] = get_sheets_from_file(pricebook_path)
         with open(mapper_path, 'r') as mapper_file:
@@ -160,16 +163,19 @@ class MapperEngine:
                         'Null value not allowed'
                     )
         
-        # check if ProductCode (key field for mapping PricebookEntry) is missing
-        if 'ProductCode' not in prod2_result.columns:
-            raise MappingError(f'ProductCode is missing in sheet {sheet_name}')
-        if prod2_result['ProductCode'].isna().all():
-            raise MappingError(f'ProductCode is required in sheet {sheet_name}')
+        primary_key = self.session.primary_key
+
+        # check if composite key fields are vaid
+        for field in primary_key:
+            if field not in prod2_result.columns:
+                raise MappingError(f"Primary key field '{field}' is missing in sheet {sheet_name}")
+            if prod2_result[field].isna().all():
+                raise MappingError(f"'{field}' field is required in sheet {sheet_name}")
         
         
         # === MAPPPING PRICEBOOKENTRY ===
         entries_frames = []
-        sku_series = prod2_result['ProductCode']
+        final_cols = primary_key + ['Pricebook2Id', 'CurrencyIsoCode', 'UnitPrice', 'IsActive']
 
         for pb_config in pb_configs:
             for currency in pb_config.currencies:
@@ -181,13 +187,13 @@ class MapperEngine:
                             (while configuring currencies in pricebooks)"""
                     )
 
-                temp_df = pd.DataFrame({
-                    'ProductCode': sku_series,
-                    'raw_price': sheet_df[source_col]
-                })
+                temp_dict = { pk_field: prod2_result[pk_field] for pk_field in primary_key }
+                temp_dict['raw_price'] = sheet_df[source_col]
+
+                temp_df = pd.DataFrame(temp_dict)
 
                 # removing missing skus and prices
-                temp_df = temp_df.dropna(subset=['ProductCode', 'raw_price'])
+                temp_df = temp_df.dropna(subset=primary_key + ['raw_price'])
                 
                 if temp_df.empty:
                     continue
@@ -203,14 +209,12 @@ class MapperEngine:
 
                 # removing NA values from formatted data
                 temp_df = temp_df.dropna(subset=['UnitPrice'])
-
-                final_cols = ['ProductCode', 'Pricebook2Id', 'CurrencyIsoCode', 'UnitPrice', 'IsActive']
                 entries_frames.append(temp_df[final_cols])
 
         if entries_frames:
             entries_result = pd.concat(entries_frames, ignore_index=True)
         else:
-            entries_result = pd.DataFrame(columns=['ProductCode', 'Pricebook2Id', 'CurrencyIsoCode', 'UnitPrice', 'IsActive'])
+            entries_result = pd.DataFrame(columns=final_cols)
 
         return prod2_result, entries_result
 

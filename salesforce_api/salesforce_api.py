@@ -182,14 +182,46 @@ class SalesforceApi:
 
 
     @auto_refresh_token
-    def _get_product_id_map(self, skus: list) -> dict:
-        if not skus: return {}
-        sku_strings = "'" + "','".join([str(s).replace("'", "\\'") for s in skus]) + "'"
-        query = f"SELECT Id, ProductCode FROM Product2 WHERE ProductCode IN ({sku_strings})"
+    def _get_product_id_map(self, df: pd.DataFrame, identity_fields: list[str]) -> dict:
+        if df.empty or not identity_fields:
+            return {}
+
+        # Budowanie warunków WHERE dla każdego pola (np. Field1 IN ('A', 'B') AND Field2 IN ('C', 'D'))
+        where_clauses = []
+        for field in identity_fields:
+            # Pobieramy unikalne wartości dla danego pola z DataFrame
+            unique_vals = df[field].dropna().unique().tolist()
+            if not unique_vals:
+                continue
+            
+            # Zabezpieczenie znaków specjalnych dla SOQL
+            vals_str = "'" + "','".join([str(v).replace("'", "\\'") for v in unique_vals]) + "'"
+            where_clauses.append(f"{field} IN ({vals_str})")
+
+        if not where_clauses:
+            return {}
+
+        where_stmt = " AND ".join(where_clauses)
         
-        self.logger.info(f"Fetching Product2 mapping for {len(skus)} SKUs...")
-        res = self.sf.query_all(query)
-        return {row['ProductCode']: row['Id'] for row in res['records'] if row['ProductCode']}
+        # Tworzymy listę unikalnych pól do pobrania (zawsze upewniając się, że pobieramy Id)
+        fields_to_query = list(set(["Id"] + identity_fields))
+        query = f"SELECT {', '.join(fields_to_query)} FROM Product2 WHERE {where_stmt}"
+        
+        self.logger.info(f"Fetching Product2 mapping using composite key: {identity_fields}...")
+        try:
+            res = self.sf.query_all(query)
+        except Exception as e:
+            self.logger.error(f"SOQL Query failed: {query}")
+            raise e
+
+        # Tworzenie mapowania: {(WartośćPole1, WartośćPole2): Id}
+        mapping = {}
+        for row in res['records']:
+            # Tworzymy klucz jako krotkę wartości. Używamy .get(), by obsłużyć ewentualne braki.
+            key = tuple(row.get(f) for f in identity_fields)
+            mapping[key] = row['Id']
+            
+        return mapping
 
     @auto_refresh_token
     def _get_existing_pbe_map(self, product_ids: list) -> dict:
@@ -266,9 +298,8 @@ class SalesforceApi:
 
     # == Product2 ===
     @auto_refresh_token
-    def load_product2(self, data: pd.DataFrame | str | Path, operation: str = 'upsert', poll_interval: int = 2):
+    def load_product2(self, data: pd.DataFrame | str | Path, identity_fields: list[str], operation: str = 'upsert', poll_interval: int = 2):
         self.logger.info("Start loading Product2...")
-        # self.execution_errors = [] 
         
         if isinstance(data, (str, Path)):
             df = pd.read_csv(data)
@@ -278,18 +309,26 @@ class SalesforceApi:
             self._register_error("Load Product2", "Invalid data format")
             return {"update": None, "insert": None}
 
-        if "ProductCode" not in df.columns:
-            self._register_error("Load Product2", "Missing ProductCode column")
-            raise MissingRequiredColumnError("ProductCode is required.")
+        # Weryfikacja czy wszystkie pola identyfikujące istnieją w pliku
+        missing_columns = [f for f in identity_fields if f not in df.columns]
+        if missing_columns:
+            self._register_error("Load Product2", f"Missing columns: {missing_columns}")
+            raise MissingRequiredColumnError(f"Required identity columns missing: {missing_columns}")
 
         try:
-            skus_in_file = df['ProductCode'].dropna().unique().tolist()
-            prod_map = self._get_product_id_map(skus_in_file)
+            # Pobieranie zaktualizowanej mapy identyfikatorów
+            prod_map = self._get_product_id_map(df, identity_fields)
         except Exception as e:
             self._register_error("Load Product2", f"Failed to fetch metadata: {e}")
             raise
 
-        df['Id'] = df['ProductCode'].map(prod_map)
+        # Funkcja pomocnicza do mapowania wiersza na odpowiednie Id
+        def map_product_id(row):
+            key = tuple(row.get(f) for f in identity_fields)
+            return prod_map.get(key)
+
+        # Aplikujemy mapowanie, by znaleźć Product2Id
+        df['Id'] = df.apply(map_product_id, axis=1)
         
         df_update = df[df['Id'].notna()].copy()
         df_insert = df[df['Id'].isna()].drop(columns=['Id'])
@@ -305,7 +344,8 @@ class SalesforceApi:
 
     # == PricebookEntry ===
     @auto_refresh_token
-    def load_pricebook_entry(self, data: pd.DataFrame | str | Path, poll_interval: int = 2):
+    @auto_refresh_token
+    def load_pricebook_entry(self, data: pd.DataFrame | str | Path, identity_fields: list[str], poll_interval: int = 2):
         self.logger.info("Start synchronizing PricebookEntries...")
         
         if isinstance(data, (str, Path)):
@@ -316,11 +356,17 @@ class SalesforceApi:
             self._register_error("Load Pricebooks", "Invalid data format")
             return {}
 
+        missing_columns = [f for f in identity_fields if f not in df.columns]
+        if missing_columns:
+            self._register_error("Load PricebookEntries", f"Missing columns: {missing_columns}")
+            raise MissingRequiredColumnError(f"Required identity columns missing: {missing_columns}")
+
         try:
-            skus_in_file = df['ProductCode'].dropna().unique().tolist()
-            prod_map = self._get_product_id_map(skus_in_file)
+            # Pobieramy mapę ID na bazie złożonego klucza
+            prod_map = self._get_product_id_map(df, identity_fields)
             
-            valid_product_ids = list(set([prod_map[sku] for sku in skus_in_file if sku in prod_map]))
+            # Pobieramy istniejące wpisy cenników dla wszystkich znalezionych produktów
+            valid_product_ids = list(set(prod_map.values()))
             existing_pbe_map = self._get_existing_pbe_map(valid_product_ids)
         except Exception as e:
             self._register_error("Load Pricebooks", f"Failed to fetch metadata: {e}")
@@ -343,21 +389,22 @@ class SalesforceApi:
         queued_std_update_keys = set()
         
         for _, row in df.iterrows():
-            sku = row.get('ProductCode')
+            # Złożony klucz z wiersza
+            composite_key = tuple(row.get(f) for f in identity_fields)
             pb_id = row.get('Pricebook2Id')
             currency = row.get('CurrencyIsoCode')
             price = row.get('UnitPrice')
             is_active = row.get('IsActive', True)
 
-            if sku not in prod_map:
-                self._register_error("Pre-check PBE", f"SKU not found in Salesforce: {sku}", str(row.to_dict()))
+            if composite_key not in prod_map:
+                self._register_error("Pre-check PBE", f"Product key not found in Salesforce: {composite_key}", str(row.to_dict()))
                 continue
             
             if not pb_id or pd.isna(pb_id):
                 self._register_error("Pre-check PBE", f"Missing Pricebook2Id", str(row.to_dict()))
                 continue
 
-            prod_id = prod_map[sku]
+            prod_id = prod_map[composite_key]
             current_comp_key = (prod_id, pb_id, currency)
             
             if std_pb_id and pb_id != std_pb_id:
@@ -379,7 +426,6 @@ class SalesforceApi:
                     })
                     queued_std_update_keys.add(std_comp_key)
 
-            # Pełny rekord - przyda się do INSERTU
             insert_record = {
                 "Pricebook2Id": pb_id,
                 "Product2Id": prod_id,
@@ -388,7 +434,6 @@ class SalesforceApi:
                 "IsActive": is_active
             }
             
-            # Ograniczony rekord - TYLKO DO UPDATE'U (usunięto zablokowane pola)
             update_record = {
                 "UnitPrice": price,
                 "IsActive": is_active
@@ -397,7 +442,6 @@ class SalesforceApi:
             is_target_std = (pb_id == std_pb_id)
 
             if current_comp_key in existing_pbe_map:
-                # Jeśli rekord istnieje - dodajemy ID do przygotowanego wcześniej słownika 'update_record'
                 update_record['Id'] = existing_pbe_map[current_comp_key]
                 if is_target_std:
                     if current_comp_key not in queued_std_update_keys:
@@ -405,18 +449,14 @@ class SalesforceApi:
                 else: 
                     updates_custom.append(update_record)
             else:
-                # Jeśli rekord nie istnieje - dodajemy przygotowany wcześniej słownik 'insert_record'
                 if is_target_std:
                     if current_comp_key not in queued_std_keys:
                         inserts_std.append(insert_record)
                 else: 
                     inserts_custom.append(insert_record)
 
-        # Inicjujemy results żeby uniknąć zwracania pustego słownika przy błędach
         results = {"success": 0, "failed": 0} 
 
-        # === Zapis do Salesforce ===
-        # Zbiorcze wywoływanie dla estetyki logowania i uproszczenia
         def execute_job(data_list, obj_name, op_type):
             if not data_list: return
             res = self._execute_bulk_v2(pd.DataFrame(data_list), obj_name, op_type, poll_interval)
