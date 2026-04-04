@@ -36,6 +36,9 @@ class MapperEditorWindow(QWidget):
         self.sheet_tabs = {} # QWidgets representing each sheet's config
         self.mapper_config = None
         self.is_dirty = False
+
+        self.original_mapper_name = ''
+        self.original_mapper_path = None
         
         try:
             session.validate()
@@ -69,12 +72,14 @@ class MapperEditorWindow(QWidget):
         
         # ==== EDITING EXISTING MAPPER LOGIC ====
         if mapper_path:
+            self.original_mapper_path = Path(mapper_path)
             self.mapper_config = self.load_mapper_file(mapper_path)
             
             if self.mapper_config is None:
                 QTimer.singleShot(0, self.close)
                 return
             
+            self.original_mapper_name = self.mapper_config.name
             self.ui.mapper_name_line_edit.setText(self.mapper_config.name)
             self.add_sheet_tabs()
             self.ui.save_mapper_button.setEnabled(True)
@@ -88,14 +93,24 @@ class MapperEditorWindow(QWidget):
     
 
     def _connect_signals(self):
+
+        def handle_name_changed(text):
+            if text != self.original_mapper_name:
+                self.toggle_changed_behaviour(True)
+
         self.ui.choose_file_button.clicked.connect(self.open_file_dialog)
         self.ui.save_mapper_button.clicked.connect(self.save_mapper)
         self.ui.cancel_editing_button.clicked.connect(self.close)
-        
-    
-    def mark_as_changed(self):
-        self.is_dirty = True
-        self.setWindowTitle('Mapper Editor *')
+        self.ui.mapper_name_line_edit.textChanged.connect(handle_name_changed)
+
+
+    def toggle_changed_behaviour(self, is_changed: bool):
+        if is_changed:
+            self.is_dirty = True
+            self.setWindowTitle('Mapper Editor *')
+        else:
+            self.is_dirty = False
+            self.setWindowTitle('Mapper Editor')
     
     
     def closeEvent(self, event):
@@ -276,7 +291,7 @@ class MapperEditorWindow(QWidget):
                             continue
 
                 new_tab = SheetTab(sheet_df, name, rule_for_sheet, self.session, self)
-                new_tab.sheet_changed.connect(self.mark_as_changed)
+                new_tab.sheet_changed.connect(lambda: self.toggle_changed_behaviour(True))
                 new_tab.setup_empty_frame()
                 self.sheet_tabs[name] = new_tab
                 self.ui.sheet_tabs.addTab(new_tab, name)
@@ -295,7 +310,7 @@ class MapperEditorWindow(QWidget):
             for sheet_rule in self.mapper_config.sheet_rules:
                 name = sheet_rule.sheet_name
                 new_tab = SheetTab(None, name, sheet_rule, self.session, self)
-                new_tab.sheet_changed.connect(self.mark_as_changed)
+                new_tab.sheet_changed.connect(lambda: self.toggle_changed_behaviour(True))
                 new_tab.setup_empty_frame()
                 self.sheet_tabs[name] = new_tab
                 self.ui.sheet_tabs.addTab(new_tab, name)
@@ -345,13 +360,31 @@ class MapperEditorWindow(QWidget):
             path_to_file = Path(self.path_to_mappers) / f"{mapper.name}.json"
             should_save = True
 
-            if path_to_file.exists():
+            # name change logic
+            is_renaming = False
+            if self.original_mapper_path is not None:
+                if self.original_mapper_path != path_to_file:
+                    is_renaming = True
+
+            if path_to_file.exists() and path_to_file != self.original_mapper_path:
                 should_save = overwrite_dialog_result(f'{mapper.name}.json')
 
             if should_save:
                 with open(path_to_file, 'w', encoding='utf-8') as f:
                     json.dump(mapper.to_dict(), f, indent=4)
-                    
+                
+                # if editing and renamed => remove old file
+                if is_renaming and self.original_mapper_path and self.original_mapper_path.exists():
+                    try:
+                        self.original_mapper_path.unlink()
+                    except Exception as e:
+                        MessageHandler.show_warning(
+                            self,
+                            'File Saving Error',
+                            f"Couldn't remove the old version of the mapper:\n{e}"
+                        )
+                        print(f"Warning: Nie udało się usunąć starego pliku mppera: {e}")
+
                 QMessageBox.information(
                     self,
                     'Mapper Saved',
