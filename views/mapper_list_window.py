@@ -1,5 +1,4 @@
 from PySide6.QtWidgets import QWidget, QListWidgetItem, QMessageBox
-from PySide6.QtGui import QIcon
 from PySide6.QtCore import Qt, Signal
 
 import json
@@ -22,7 +21,6 @@ class MapperListWindow(QWidget):
         
         self.ui = Ui_MapperListMain()
         self.ui.setupUi(self)
-        self.setWindowIcon(QIcon())
         
         # === views ===
         self.editor_new = None

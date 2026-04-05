@@ -1,5 +1,7 @@
+import os
 import sys
 from PySide6.QtWidgets import QApplication
+from PySide6.QtGui import QIcon
 from views.main_menu_window import MainMenuWindow
 from core.settings.settings_manager import settings_manager
 from exceptions.global_exceptions import *
@@ -11,6 +13,16 @@ def main() -> None:
     try:
         settings_manager.load_settings() 
         
+        # === icon management ===
+        if os.name == 'nt':
+            import ctypes
+            myappid = 'quickport.app' 
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+
+        icon_path = settings_manager.get_setting('icon_path')
+        app.setWindowIcon(QIcon(icon_path))
+        # ====================== 
+
         main_menu = MainMenuWindow()
         main_menu.show()
 

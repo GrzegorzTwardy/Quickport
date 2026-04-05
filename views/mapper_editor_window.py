@@ -1,5 +1,4 @@
 from PySide6.QtWidgets import (QApplication, QWidget, QFileDialog, QMessageBox)
-from PySide6.QtGui import QIcon
 from PySide6.QtCore import Signal, Qt, QTimer
 
 import os
@@ -51,8 +50,6 @@ class MapperEditorWindow(QWidget):
         
         self.ui = Ui_MapperEditor()
         self.ui.setupUi(self)
-        self.setWindowIcon(QIcon())
-
                 
         # LOADED SHEETS
         self.all_sheets = {} # all dataframes from file

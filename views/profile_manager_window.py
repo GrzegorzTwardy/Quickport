@@ -1,7 +1,6 @@
 from PySide6.QtWidgets import (
     QWidget, QMessageBox, QListWidgetItem, QDialog, QHBoxLayout, QLabel, QStyle, QDialogButtonBox
 )
-from PySide6.QtGui import QIcon
 from PySide6.QtCore import Signal, Qt
 from core.profile.profile_model import Profile
 from ui.ui_profile_manager import Ui_ProfileManager
@@ -34,7 +33,6 @@ class ProfileManagerWindow(QWidget):
         
         self.ui = Ui_ProfileManager()
         self.ui.setupUi(self)
-        self.setWindowIcon(QIcon())
         
         self._connect_signals()
         self.load_profiles()

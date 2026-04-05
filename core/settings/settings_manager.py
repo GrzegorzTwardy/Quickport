@@ -8,12 +8,13 @@ default_values = {
     'mappers_path': './mappers/', # shouldn't be changed
     'output_path': './output/',
     'profiles_file_path': './profiles.json', # shouldn't be changed
+    'icon_path': './img/icon.ico',
     'max_table_records': 50
 }
 
 class SettingsManager:
 
-    AVAILABLE_SETTINGS = ['mappers_path', 'output_path', 'profiles_file_path', 'max_table_records']
+    AVAILABLE_SETTINGS = ['mappers_path', 'output_path', 'profiles_file_path', 'icon_path', 'max_table_records']
 
     def __init__(self, path='./settings.json'):
         self.path = path
