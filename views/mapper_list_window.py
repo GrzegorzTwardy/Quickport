@@ -14,9 +14,11 @@ class MapperListWindow(QWidget):
     
     list_changed = Signal()
     
-    def __init__(self, session: AppSession):
-        super().__init__()
+    def __init__(self, session: AppSession, parent=None):
+        super().__init__(parent)
         self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setWindowFlag(Qt.Window)
+        
         self.session = session
         
         self.ui = Ui_MapperListMain()
@@ -79,7 +81,7 @@ class MapperListWindow(QWidget):
     
     def add_new_mapper(self): # singleton
         if self.editor_new is None:
-            self.editor_new = MapperEditorWindow(self.session, None)
+            self.editor_new = MapperEditorWindow(self.session, None, self)
             self.editor_new.refresh_mapper_list.connect(self.load_mappers)
             self.editor_new.destroyed.connect(lambda: setattr(self, 'editor_new', None))
             self.editor_new.show()
@@ -107,7 +109,7 @@ class MapperListWindow(QWidget):
             existing_window.activateWindow()
             return
 
-        new_window = MapperEditorWindow(self.session, target_path)
+        new_window = MapperEditorWindow(self.session, target_path, self)
         new_window.refresh_mapper_list.connect(self.load_mappers)
         
         self.opened_editors[target_path] = new_window

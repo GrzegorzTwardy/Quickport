@@ -13,6 +13,7 @@ from views.mapper_list_window import MapperListWindow
 from views.profile_manager_window import ProfileManagerWindow
 from views.widgets.progress_bar_dialog import ProgressBarDialog
 from views.widgets.dialog_boxes.settings_dialog import SettingsDialog
+from views.widgets.dialog_boxes.about_dialog import AboutDialog
 from utils.message_handler import MessageHandler
 from thread_workers.sf_export_worker import SalesforceExportWorker
 from thread_workers.csv_export_worker import CsvExportWorker
@@ -56,10 +57,16 @@ class MainMenuWindow(QMainWindow):
         self.ui.profilesButton.clicked.connect(self.open_profile_manager)
         self.ui.exportCsvButton.clicked.connect(self.export_data_to_csv)
         self.ui.actionSettings.triggered.connect(self.open_settings_dialog)
+        self.ui.actionShowInfo.triggered.connect(self.open_about_dialog)
     
     
     def open_settings_dialog(self):
         dialog = SettingsDialog(self)
+        dialog.show()
+        
+        
+    def open_about_dialog(self):
+        dialog = AboutDialog(self)
         dialog.show()
     
     
@@ -101,7 +108,7 @@ class MainMenuWindow(QMainWindow):
         
     def open_mapper_list(self):
         if self.mapper_list_window is None:
-            self.mapper_list_window = MapperListWindow(self.session)
+            self.mapper_list_window = MapperListWindow(self.session, self)
             self.mapper_list_window.list_changed.connect(self.load_mappers)
             self.mapper_list_window.destroyed.connect(lambda: setattr(self, 'mapper_list_window', None))
             self.mapper_list_window.show()

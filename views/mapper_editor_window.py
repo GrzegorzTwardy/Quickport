@@ -26,9 +26,10 @@ class MapperEditorWindow(QWidget):
     
     refresh_mapper_list = Signal()
     
-    def __init__(self, session: AppSession, mapper_path=None):
-        super().__init__()
+    def __init__(self, session: AppSession, mapper_path=None, parent=None):
+        super().__init__(parent)
         self.setAttribute(Qt.WA_DeleteOnClose)
+        self.setWindowFlag(Qt.Window)
         
         # GLOBAL VALUES
         self.path_to_pricebook = None
