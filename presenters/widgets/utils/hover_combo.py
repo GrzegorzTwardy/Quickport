@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QComboBox
 from PySide6.QtCore import QPoint
-from views.widgets.utils.field_metadata_popup import FieldMetadataPopup
+from presenters.widgets.utils.field_metadata_popup import FieldMetadataPopup
 
 
 class HoverComboBox(QComboBox):

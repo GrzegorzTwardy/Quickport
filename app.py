@@ -2,7 +2,7 @@ import os
 import sys
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
-from views.main_menu_window import MainMenuWindow
+from presenters.main_menu_window import MainMenuWindow
 from core.settings.settings_manager import settings_manager
 from exceptions.global_exceptions import *
 from utils.message_handler import MessageHandler
@@ -19,9 +19,18 @@ def main() -> None:
             myappid = 'quickport.app' 
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
 
-        icon_path = settings_manager.get_setting('icon_path')
-        app.setWindowIcon(QIcon(icon_path))
-        # ====================== 
+        def get_resource_path(relative_path):
+            try:
+                base_path = sys._MEIPASS
+            except Exception:
+                base_path = os.path.abspath('.')
+            return os.path.join(base_path, relative_path)
+
+        raw_icon_path = settings_manager.get_setting('icon_path')
+        real_icon_path = get_resource_path(raw_icon_path)
+        
+        app.setWindowIcon(QIcon(real_icon_path))
+        # ======================
 
         main_menu = MainMenuWindow()
         main_menu.show()

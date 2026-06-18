@@ -672,7 +672,7 @@ class FragmentArgs(QWidget):
 if __name__ == "__main__":
     import sys
     from PySide6.QtWidgets import QApplication, QWidget, QGridLayout
-    from views.widgets.product2_row import Product2Row
+    from presenters.widgets.product2_row import Product2Row
 
     app = QApplication(sys.argv)
     

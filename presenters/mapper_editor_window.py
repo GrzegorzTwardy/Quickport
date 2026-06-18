@@ -9,11 +9,11 @@ from ui.ui_mapper_editor import Ui_MapperEditor
 from utils.xlsx_manager import get_sheets_from_file
 from utils.message_handler import MessageHandler
 
-from views.widgets.sheet_tab import SheetTab
-from views.widgets.dialog_boxes.checklist_dialog import execute_checklist_dialog
-from views.widgets.dialog_boxes.overwrite_dialog import overwrite_dialog_result
-from views.widgets.dialog_boxes.confirm_warning_dialog import confirm_warning_result
-from views.widgets.dialog_boxes.column_mapping_dialog import ColumnMappingDialog
+from presenters.widgets.sheet_tab import SheetTab
+from presenters.widgets.dialog_boxes.checklist_dialog import execute_checklist_dialog
+from presenters.widgets.dialog_boxes.overwrite_dialog import overwrite_dialog_result
+from presenters.widgets.dialog_boxes.confirm_warning_dialog import confirm_warning_result
+from presenters.widgets.dialog_boxes.column_mapping_dialog import ColumnMappingDialog
 
 from core.mapper.mapper_model import MapperModel, SheetRule
 from core.settings.settings_manager import settings_manager

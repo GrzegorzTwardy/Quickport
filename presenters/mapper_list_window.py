@@ -5,7 +5,7 @@ import json
 from pathlib import Path
 
 from core.settings.settings_manager import settings_manager
-from views.mapper_editor_window import MapperEditorWindow
+from presenters.mapper_editor_window import MapperEditorWindow
 from ui.ui_mapper_list import Ui_MapperListMain
 from dtos.session import AppSession
 

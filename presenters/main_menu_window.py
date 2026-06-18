@@ -9,11 +9,11 @@ from core.settings.settings_manager import settings_manager
 from exceptions.global_exceptions import *
 from ui.ui_main_menu import Ui_MainMenu
 
-from views.mapper_list_window import MapperListWindow
-from views.profile_manager_window import ProfileManagerWindow
-from views.widgets.progress_bar_dialog import ProgressBarDialog
-from views.widgets.dialog_boxes.settings_dialog import SettingsDialog
-from views.widgets.dialog_boxes.about_dialog import AboutDialog
+from presenters.mapper_list_window import MapperListWindow
+from presenters.profile_manager_window import ProfileManagerWindow
+from presenters.widgets.progress_bar_dialog import ProgressBarDialog
+from presenters.widgets.dialog_boxes.settings_dialog import SettingsDialog
+from presenters.widgets.dialog_boxes.about_dialog import AboutDialog
 from utils.message_handler import MessageHandler
 from thread_workers.sf_export_worker import SalesforceExportWorker
 from thread_workers.csv_export_worker import CsvExportWorker
