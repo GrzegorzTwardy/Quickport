@@ -2,7 +2,7 @@ import os
 import sys
 from PySide6.QtWidgets import QApplication
 from PySide6.QtGui import QIcon
-from presenters.main_menu_window import MainMenuWindow
+from window_logic.main_menu_window import MainMenuWindow
 from core.settings.settings_manager import settings_manager
 from exceptions.global_exceptions import *
 from utils.message_handler import MessageHandler

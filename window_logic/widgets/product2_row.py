@@ -6,9 +6,9 @@ from PySide6.QtWidgets import (
 
 from core.mapper.mapper_model import ProductFieldMapping
 from core.mapper.mapper_functions import mapping_functions_list
-from presenters.widgets.utils.hover_label import HoverLabel
-from presenters.widgets.dialog_boxes.arg_dialog import ArgDialog
-from presenters.widgets.utils.hover_combo import HoverComboBox
+from window_logic.widgets.utils.hover_label import HoverLabel
+from window_logic.widgets.dialog_boxes.arg_dialog import ArgDialog
+from window_logic.widgets.utils.hover_combo import HoverComboBox
 from exceptions.gui_exceptions import MappingNotSetError
 
 

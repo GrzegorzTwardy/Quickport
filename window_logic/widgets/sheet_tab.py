@@ -11,9 +11,9 @@ from utils.xlsx_manager import get_sheets_from_file
 from ui.ui_sheet_frame import Ui_SheetFrame
 from utils.message_handler import MessageHandler
 
-from presenters.widgets.currency_tab import CurrencyTab
-from presenters.widgets.product2_row import Product2Row
-from presenters.widgets.table_tab import TableTab
+from window_logic.widgets.currency_tab import CurrencyTab
+from window_logic.widgets.product2_row import Product2Row
+from window_logic.widgets.table_tab import TableTab
 
 from dtos.session import AppSession
 

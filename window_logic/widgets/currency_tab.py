@@ -1,8 +1,8 @@
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtWidgets import (QLabel, QGridLayout, QWidget, QScrollArea, QFrame, QPushButton, QMessageBox, QSizePolicy)
 
-from presenters.widgets.currency_row import CurrencyRow
-from presenters.widgets.dialog_boxes.checklist_dialog import execute_checklist_dialog
+from window_logic.widgets.currency_row import CurrencyRow
+from window_logic.widgets.dialog_boxes.checklist_dialog import execute_checklist_dialog
 
 from core.mapper.mapper_model import PricebookConfig, CurrencyMapping
 

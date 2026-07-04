@@ -11,8 +11,8 @@ from salesforce_api.authenticator import Authenticator
 from salesforce_api.salesforce_api import SalesforceApi
 from exceptions.login_exceptions import *
 from utils.message_handler import MessageHandler
-from presenters.widgets.profile_config import ProfileConfigDialog
-from presenters.widgets.dialog_boxes.checklist_dialog import ChecklistDialog
+from window_logic.widgets.profile_config import ProfileConfigDialog
+from window_logic.widgets.dialog_boxes.checklist_dialog import ChecklistDialog
 
 
 # TODO: change focus when new profile is added or edited

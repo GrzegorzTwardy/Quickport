@@ -4,7 +4,7 @@ from ui.ui_profile_config import Ui_ProfileConfig
 from core.profile.profile_service import ProfileService
 from core.profile.profile_model import Profile
 from utils.message_handler import MessageHandler
-from presenters.widgets.dialog_boxes.checklist_dialog import execute_checklist_dialog, ChecklistDialog
+from window_logic.widgets.dialog_boxes.checklist_dialog import execute_checklist_dialog, ChecklistDialog
 from utils.message_handler import MessageHandler
 
 
