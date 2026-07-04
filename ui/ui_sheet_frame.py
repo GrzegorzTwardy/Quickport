@@ -212,7 +212,7 @@ class Ui_SheetFrame(object):
         self.functions_label.setText(QCoreApplication.translate("SheetFrame", u"Functions", None))
         self.source_label.setText(QCoreApplication.translate("SheetFrame", u"Source", None))
         self.allow_empty_label.setText(QCoreApplication.translate("SheetFrame", u"Allow Empty", None))
-        self.product_fields_label.setText(QCoreApplication.translate("SheetFrame", u"Product Fields", None))
+        self.product_fields_label.setText(QCoreApplication.translate("SheetFrame", u"Field Name", None))
         # self.xlsx_tabs.setTabText(self.xlsx_tabs.indexOf(self.output_tab), QCoreApplication.translate("SheetFrame", u"OUTPUT", None))
     # retranslateUi
 
