@@ -7,3 +7,4 @@ pyside6_essentials==6.10.1
 Requests==2.34.2
 simple_salesforce==1.12.6
 views==0.3
+openpyxl>=3.0.0
