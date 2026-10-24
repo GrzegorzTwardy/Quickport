@@ -1,0 +1,9 @@
+cryptography==50.0.2
+numpy==2.5.4
+pandas==3.1.0
+pyside6==6.10.1
+pyside6_addons==6.10.1
+pyside6_essentials==6.10.1
+Requests==2.34.2
+simple_salesforce==1.12.6
+views==0.3
